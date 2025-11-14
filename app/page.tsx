@@ -6,7 +6,7 @@ import Marquee from './components/Marquee'
 import Socialmedia from './components/Socialmedia';
 import ContactForm from './components/contactform';
 import InfiniteFormScroll from './components/infinite-scroll-animation';
-import BinaryBackground from './components/binarybackground';
+
 
 
 
@@ -51,7 +51,7 @@ export default function Home() {
       <section className="grid grid-cols-5 border-t-0 border-2 border-[var(--border-color)]">
 
         <div className=" border-r-2 border-[var(--border-color)] col-span-1">
-          <BinaryBackground />
+          
 
         </div>
 
