@@ -20,7 +20,7 @@ function Marquee() {
       <ul className="flex [&_img]:max-w-none animate-infinite-scroll">
         {texts.map((text, index) => (
           <li key={index}>
-            <span className="text-4xl font-bold whitespace-nowrap">{text}</span>
+            <span className="text-4xl font-bold whitespace-nowrap text-stone-300">{text}</span>
           </li>
         ))}
       </ul>
@@ -28,7 +28,7 @@ function Marquee() {
       <ul className="flex  [&_li]:mx-8 [&_img]:max-w-none animate-infinite-scroll" aria-hidden="true">
         {texts.map((text, index) => (
           <li key={index}>
-            <span className="text-4xl font-bold whitespace-nowrap">{text}</span>
+            <span className="text-4xl font-bold whitespace-nowrap text-stone-300">{text}</span>
           </li>
         ))}
       </ul>
