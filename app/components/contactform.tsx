@@ -70,13 +70,6 @@ export default function ContactForm() {
           onChange={(e) => setFormData({ ...formData, projectInfo: e.target.value })}
         />
       </div>
-
-      <button
-        type="submit"
-        className="bg-stone-300 text-black py-4 px-8 rounded-full text-lg font-bold hover:bg-stone-400 transition-colors mt-6"
-      >
-        Send
-      </button>
     </form>
   )
 }

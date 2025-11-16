@@ -13,7 +13,22 @@ import InfiniteFormScroll from './components/infinite-scroll-animation';
 
 export default function Home() {
   const [showAbout, setShowAbout] = useState(false);
+  const [showContact, setShowContact] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const projectImages = [
+    { src: '/images/Project1.png', alt: 'IZA POS Dashboard' },
+    { src: '/images/Project2.png', alt: 'IZA POS Inventory' }
+  ];
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % projectImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + projectImages.length) % projectImages.length);
+  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -55,14 +70,8 @@ export default function Home() {
         {/* Right Content */}
         <div className="pr-8 py-2 col-span-1 justify-end flex items-center">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg text-stone-300">Rezki Haikal Izami</h1>
+            <h1 className="text-lg text-stone-300"></h1>
             <div className="w-[45px] h-[45px] relative">
-              <Image
-                src="/images/WaterDragon.jpg"
-                alt="Profile Photo"
-                fill
-                className="rounded-full object-cover"
-              />
             </div>
           </div>
         </div>
@@ -85,12 +94,12 @@ export default function Home() {
           
           {/* Content layer */}
           <div className="relative z-10">
-            <div className="p-8 py-10 relative animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+            <div className="p-20  relative animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               
-              <h1 className="text-stone-300 text-[80px] font-bold leading-none text-left">
-                Fullstack AI Developer
+              <h1 className="text-stone-300 text-[80px] font-bold leading-none text-center">
+                Fullstack Developer
               </h1>
-              <div className="mt-4 text-stone-400 text-[48px] font-light text-left">
+              <div className="mt-4 text-stone-400 text-[48px] font-light text-center">
                 Designing & Delivering Website, Application, and much more
               </div>
             </div>
@@ -122,53 +131,83 @@ export default function Home() {
       <section className="grid grid-cols-5 border-t-0 border-2 border-[var(--border-color)]">
 
         <div className="p-8 border-r-2 border-[var(--border-color)] col-span-1">
-          <h2 className="text-3xl text-stone-300 font-semibold text-center">IZA POS</h2>
-            <h2 className="text-lg mt-4 text-justify text-stone-400 ">Smart AI Cashier System is a next-generation web-based point of sale platform designed to streamline business operations for cafés and retail stores. With IZA POS, we aimed to highlight intelligent automation, sleek design, and real-time analytics that empower business owners to make smarter decisions. To achieve this, I worked on the branding, interface design, and website development — focusing on clarity, usability, and modern presentation of IZA POS's innovative features.</h2>
         </div>
 
-        <div className="p-8 border-r-2 border-[var(--border-color)] col-span-3 flex flex-col gap-3">
-          <div className='flex gap-8'>
-            <div className='flex-1 animate-fade-in-up' style={{ animationDelay: '0.1s' }}>
-              <div className='bg-neutral-900 h-[400px] w-full overflow-hidden relative rounded-lg group cursor-pointer'>
-                <Image
-                  src="/images/Project1.png"
-                  alt="IZA POS Dashboard"
-                  fill
-                  className="object-cover transition-all duration-300 group-hover:brightness-50"
-                />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <h3 className="text-white text-4xl font-bold">Dashboard</h3>
-                </div>
-              </div>
-        
-            </div>
-            <div className='flex-1 animate-fade-in-up' style={{ animationDelay: '0.3s' }}>
-              <div className='bg-neutral-900 h-[400px] w-full overflow-hidden relative rounded-lg group cursor-pointer'>
-                <Image
-                  src="/images/Project2.png"
-                  alt="IZA POS Stock Management"
-                  fill
-                  className="object-cover transition-all duration-300 group-hover:brightness-50"
-                />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <h3 className="text-white text-4xl font-bold">Inventory</h3>
-                </div>
-              </div>
-  
-            </div>
+        <div className="p-20 border-r-2 border-[var(--border-color)] col-span-3 flex gap-8 items-center" >
+          {/* Left side - Title and Description */}
+          <div className='flex-1 flex flex-col gap-6'>
+            <h2 className="text-4xl text-stone-300 font-bold">IZA POS</h2>
+            <p className="text-lg text-stone-400 mr-10 text-justify leading-relaxed">
+              Smart AI Cashier System is a next-generation web-based point of sale platform designed to streamline business operations for cafés and retail stores. With IZA POS, we aimed to highlight intelligent automation, sleek design, and real-time analytics that empower business owners to make smarter decisions. To achieve this, I worked on the branding, interface design, and website development — focusing on clarity, usability, and modern presentation of IZA POS's innovative features.
+            </p>
           </div>
-          <div className='animate-fade-in-up px-10' style={{ animationDelay: '0.5s' }}>
-  
+
+          {/* Right side - Image Slider */}
+          <div className='flex-1 flex justify-center items-center'>
+            <div className='w-full max-w-[600px] relative ml-5'>
+              {/* Image Stack */}
+              <div className='relative h-[500px]'>
+                {projectImages.map((image, index) => {
+                  const isActive = index === currentImageIndex;
+                  const isPrev = index === (currentImageIndex - 1 + projectImages.length) % projectImages.length;
+                  const isNext = index === (currentImageIndex + 1) % projectImages.length;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`absolute inset-0 transition-all duration-500 ${
+                        isActive 
+                          ? 'z-20 scale-100 opacity-100' 
+                          : isPrev
+                          ? 'z-10 -translate-x-8 scale-95 opacity-40 blur-sm'
+                          : isNext
+                          ? 'z-10 translate-x-8 scale-95 opacity-40 blur-sm'
+                          : 'z-0 opacity-0'
+                      }`}
+                    >
+                      <div className='h-full w-full overflow-hidden relative rounded-lg'>
+                        <Image
+                          src={image.src}
+                          alt={image.alt}
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Navigation Buttons */}
+              {currentImageIndex < projectImages.length - 1 && (
+                <button
+                  onClick={nextImage}
+                  className='absolute left-0 top-1/2 -translate-y-1/2 z-30 text-stone-300 hover:text-stone-100 transition-colors text-5xl font-light px-4'
+                >
+                  ‹
+                </button>
+              )}
+              {currentImageIndex > 0 && (
+                <button
+                  onClick={prevImage}
+                  className='absolute right-0 top-1/2 -translate-y-1/2 z-30 text-stone-300 hover:text-stone-100 transition-colors text-5xl font-light px-4'
+                >
+                  ›
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="p-8 col-span-1 flex flex-col justify-between">
-          <div></div> {/* Empty div to push content down */}
+          <div></div>
           <div className="flex flex-col items-start gap-4">
           </div>
         </div>
 
       </section>
+
+
 
 
       {/* More Coming Soon Section */}
@@ -196,29 +235,40 @@ export default function Home() {
           {!showAbout ? (
             <button
               onClick={() => setShowAbout(true)}
-              className="text-xl font-bold text-stone-300 hover:text-stone-400 pl-8 transition-colors duration-300"
+              className="text-xl font-bold text-stone-300 hover:text-stone-400 pl-8 py-5 transition-colors duration-300"
             >
               About Me
             </button>
           ) : (
-            <div className="animate-fade-in-up p-8">
-              <h2 className="text-4xl font-bold text-stone-300 mb-6">About Me</h2>
-              <p className="text-lg text-stone-400 leading-relaxed">
-                I am a passionate Fullstack AI Developer with expertise in building modern web applications 
-                and intelligent systems. With a strong foundation in both frontend and backend technologies, 
-                I specialize in creating seamless user experiences powered by cutting-edge AI solutions.
-              </p>
-              <p className="text-lg text-stone-400 leading-relaxed mt-4">
-                My journey in tech has led me to work on diverse projects ranging from AI-powered cashier systems 
-                to sophisticated web platforms. I believe in combining elegant design with robust functionality 
-                to deliver solutions that make a real impact.
-              </p>
+            <div className="animate-fade-in-up p-20 flex gap-2 items-start relative">
               <button
                 onClick={() => setShowAbout(false)}
-                className="mt-6 px-6 py-2 border-2 border-stone-300 text-stone-300 hover:bg-stone-300 hover:text-black transition-all duration-300"
+                className="absolute top-8 right-8 text-stone-300 hover:text-stone-400 transition-colors duration-300 text-4xl font-light"
               >
-                Close
+                ×
               </button>
+              <div className="flex-1">
+                <h2 className="text-4xl font-bold text-stone-300 mb-6 ">About Me</h2>
+                <p className="text-lg text-stone-400 leading-relaxed text-justify">
+                  I am a Fullstack Developer with strong technical capabilities and a clear focus on building intelligent, high-performance digital products. My expertise spans frontend and backend development, UI/UX implementation, and practical AI integration for real operational use cases.
+                </p>
+                <p className="text-lg text-stone-400 text-justify leading-relaxed mt-4">
+                  I specialize in translating complex requirements into clean interfaces, reliable system architecture, and automation features that streamline workflows. I am highly passionate about combining modern web engineering with AI-driven insights to create products that are efficient, scalable, and impactful for users and businesses.
+                </p>
+              </div>
+              <div className="flex-1 flex justify-end items-center">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="w-[450px] h-[450px] relative rounded-xl overflow-hidden">
+                    <Image
+                      src="/images/Fotosaya.jpg"
+                      alt="About Me"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <Socialmedia />
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -226,22 +276,51 @@ export default function Home() {
         <div className="col-span-1 ">
 
         </div>
-      </section>      {/* Contact Section */}
+      </section>
+      
+       {/* Contact Section */}
       <section className="grid grid-cols-5 border-t-0 border-2 border-[var(--border-color)]">
 
-        <div className="p-8 border-r-2 border-[var(--border-color)] col-span-1 flex flex-col justify-between animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
-          <div>
-            <h2 className="text-3xl text-right text-stone-300 font-bold">CONTACT US</h2>
-            <h2 className="text-lg mt-4 text-right text-stone-400 font-light">Feel free to reach out for collaborations or just a friendly hello!</h2>
-          </div>
-          <div className="mt-auto">
-            <Socialmedia />
-          </div>
+        <div className="p-8 border-r-2 border-[var(--border-color)] col-span-1">
+          <h2 className="text-3xl text-right text-red-500 font-light"></h2>
         </div>
 
-        <div className="p-8 py-9 border-r-2 border-[var(--border-color)] col-span-3 animate-fade-in-up" style={{ animationDelay: '0.9s' }}>
-          <ContactForm />
+        <div className="col-span-3 border-r-2 border-[var(--border-color)] flex items-center">
+          {!showContact ? (
+            <button
+              onClick={() => setShowContact(true)}
+              className="text-xl font-bold text-stone-300 hover:text-stone-400 pl-8 transition-colors duration-300"
+            >
+              Contact Us
+            </button>
+          ) : (
+            <div className="animate-fade-in-up p-20 w-full relative">
+              <button
+                onClick={() => setShowContact(false)}
+                className="absolute top-8 right-8 text-stone-300 hover:text-stone-400 transition-colors duration-300 text-4xl font-light"
+              >
+                ×
+              </button>
+              <div className="flex flex-col gap-8">
+                <div>
+                  <h2 className="text-4xl text-stone-300 font-bold mb-6">CONTACT US</h2>
+                </div>
 
+                <div>
+                  <ContactForm />
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    className="w-full px-6 py-2 border-2 border-stone-300 bg-stone-300 text-black hover:bg-black hover:text-stone-300 transition-all duration-300"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="col-span-1">
@@ -252,19 +331,21 @@ export default function Home() {
 
       {/* Footer Section */}
 
-      <section className="grid grid-cols-5 border-t-0 border-2 border-[var(--border-color)]">
+      <section className="grid grid-cols-5 border-t-0 border-2 border-[var(--border-color)] relative">
 
         <div className="p-8 border-r-2 border-[var(--border-color)] col-span-1 flex flex-col justify-between">
         </div>
 
-        <div className="px-8 h-[250px] overflow-hidden border-r-2 border-[var(--border-color)] col-span-3 animate-fade-in-up" style={{ animationDelay: '1.1s' }}>
-          <Image
-            src="/images/about.png"
-            alt="About Us"
-            width={1200}
-            height={800}
-            className="w-full h-auto relative top-[10%]"
-          />
+        <div className="border-r-2 border-[var(--border-color)] col-span-3 relative h-[200px]">
+          <div className="absolute inset-0 px-20 pt-4 overflow-hidden animate-fade-in-up" style={{ animationDelay: '1.1s' }}>
+            <Image
+              src="/images/about.png"
+              alt="About Us"
+              width={2000}
+              height={800}
+              className="w-full h-auto relative top-[10%]"
+            />
+          </div>
         </div>
 
         <div className="p-8 col-span-1">
