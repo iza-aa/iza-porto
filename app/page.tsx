@@ -42,7 +42,7 @@ export default function Home() {
     },
     {
       id: 4,
-      thumbnail: '/images/asda.png',
+      thumbnail: '/images/nextproject.png',
       status: 'Coming Soon',
       title: 'Coming Soon',
       date: 'xx x, 2xxx'
