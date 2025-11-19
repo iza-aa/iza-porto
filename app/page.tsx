@@ -362,8 +362,8 @@ export default function Home() {
               >
                 ×
               </button>
-              <div className="flex-1">
-                <h2 className="text-4xl font-bold text-stone-300 mb-6 ">About Me</h2>
+              <div className="flex-1 ">
+                <h2 className="text-4xl font-bold text-stone-300 mb-6">About Me</h2>
                 <p className="text-lg text-stone-400 leading-relaxed text-justify">
                   I am a Fullstack Developer with strong technical capabilities and a clear focus on building intelligent, high-performance digital products. My expertise spans frontend and backend development, UI/UX implementation, and practical AI integration for real operational use cases.
                 </p>
@@ -371,9 +371,9 @@ export default function Home() {
                   I specialize in translating complex requirements into clean interfaces, reliable system architecture, and automation features that streamline workflows. I am highly passionate about combining modern web engineering with AI-driven insights to create products that are efficient, scalable, and impactful for users and businesses.
                 </p>
               </div>
-              <div className="flex-1 flex justify-end items-center">
+              <div className="flex-1 ml-6 mt-20 flex justify-end items-center">
                 <div className="flex flex-col items-center gap-6">
-                  <div className="w-[450px] h-[450px] relative rounded-xl overflow-hidden">
+                  <div className="w-[400px] h-[430px] relative rounded-xl overflow-hidden">
                     <Image
                       src="/images/Fotosaya.jpg"
                       alt="About Me"
