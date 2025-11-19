@@ -21,46 +21,32 @@ export default function Home() {
   const projects = [
     {
       id: 1,
-      thumbnail: '/images/Project1.png',
-      status: 'Completed',
+      thumbnail: '/images/IZA-POS.png',
+      status: 'Concept',
       title: 'IZA POS',
       date: 'November 15, 2024'
     },
     {
       id: 2,
-      thumbnail: '/images/Project2.png',
+      thumbnail: '/images/IZA-POS-V2.png',
       status: 'In Development',
-      title: 'Portfolio 2.0',
-      date: 'November 10, 2024'
+      title: 'IZA POS V2',
+      date: 'Februari, 2025'
     },
     {
       id: 3,
-      thumbnail: '/images/Project1.png',
+      thumbnail: '/images/GAG-MACRO.png',
       status: 'Concept',
-      title: 'E-Commerce Platform',
+      title: 'LUA Automation Script',
       date: 'October 20, 2024'
     },
     {
       id: 4,
-      thumbnail: '/images/Project1.png',
-      status: 'Completed',
-      title: 'Mobile Banking App',
-      date: 'September 5, 2024'
+      thumbnail: '/images/asda.png',
+      status: 'Coming Soon',
+      title: 'Coming Soon',
+      date: 'xx x, 2xxx'
     },
-    {
-      id: 5,
-      thumbnail: '/images/Project2.png',
-      status: 'In Development',
-      title: 'Restaurant Management',
-      date: 'August 22, 2024'
-    },
-    {
-      id: 6,
-      thumbnail: '/images/Project1.png',
-      status: 'Completed',
-      title: 'Healthcare Dashboard',
-      date: 'July 18, 2024'
-    }
   ];
 
   useEffect(() => {
