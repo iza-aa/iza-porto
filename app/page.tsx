@@ -10,7 +10,6 @@ import InfiniteFormScroll from './components/infinite-scroll-animation';
 
 
 
-
 export default function Home() {
   const [showAbout, setShowAbout] = useState(false);
   const [showContact, setShowContact] = useState(false);
@@ -35,12 +34,12 @@ export default function Home() {
     },
     {
       id: 3,
-      thumbnail: '/images/GAG-MACRO.png',
-      status: 'Concept',
-      title: 'LUA Automation Script',
-      date: 'October 20, 2024'
+      thumbnail: '/images/NusantaraEDU.png',
+      status: 'Completed',
+      title: 'NusantaraEDU',
+      date: 'July 22, 2025'
     },
-    {
+        {
       id: 4,
       thumbnail: '/images/nextproject.png',
       status: 'Coming Soon',
