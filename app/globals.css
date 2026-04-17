@@ -4,21 +4,24 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0a0a0a;
   --border-color: #e5e5e5;
+  --muted: #737373;
+  --muted-bg: #f5f5f5;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --border-color: #1a1a1a;
-  }
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --border-color: #1f1f1f;
+  --muted: #737373;
+  --muted-bg: #111111;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
+  transition: background 0.35s ease, color 0.35s ease;
 }
 
 @keyframes fadeInUp {

@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
-import { Inknut_Antiqua } from "next/font/google";
+import { Inknut_Antiqua, Anton } from "next/font/google";
 import "./globals.css";
+import Navbar from "./layout/navbar";
+import { LoadingProvider } from "./context/LoadingContext";
 
 const inknutAntiqua = Inknut_Antiqua({
   subsets: ["latin"],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: "--font-inknut-antiqua",
+  display: "swap",
+});
+
+const anton = Anton({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-anton",
   display: "swap",
 });
 
@@ -20,10 +29,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inknutAntiqua.className}>
-        {children}
+    <html lang="en" className="dark">
+      <head>
+        {/* Prevent flash of wrong theme on load */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('theme');if(t==='light'){document.documentElement.classList.remove('dark')}else{document.documentElement.classList.add('dark')}})()`,
+          }}
+        />
+      </head>
+      <body className={`${inknutAntiqua.variable} ${anton.variable} ${inknutAntiqua.className}`}>
+        <LoadingProvider>
+          <Navbar />
+          {children}
+        </LoadingProvider>
       </body>
     </html>
   );
 }
+
