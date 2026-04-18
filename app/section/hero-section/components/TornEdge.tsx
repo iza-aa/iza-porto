@@ -113,7 +113,8 @@ export default function TornEdge({ clipTargetRef }: TornEdgeProps) {
       frameCountRef.current++
       if (frameCountRef.current % 2 !== 0) return  // 30fps throttle
 
-      const w    = canvas.offsetWidth
+      const w     = canvas.offsetWidth
+      const fillW  = Math.ceil(canvas.getBoundingClientRect().width) + 4  // cover subpixel gap
       const cssH = cssHRef.current
       tRef.current += SPEED * 2  // ×2 kompensasi skip frame
       const t = tRef.current
@@ -131,14 +132,18 @@ export default function TornEdge({ clipTargetRef }: TornEdgeProps) {
         wnCache[i] = widthNoise(i / cols, t)  // B: hitung sekali, pakai di 2 pass
       }
 
-      // 2. Cream fill from wave to canvas bottom
+      // 2. Fill from wave to canvas bottom — color follows dark/light mode
+      const isDark  = document.documentElement.classList.contains('dark')
+      const bgColor = isDark ? '#1a1209' : '#f0ece4'
       ctx.beginPath()
       ctx.moveTo(0, edgeY[0])
       for (let i = 1; i < cols; i++) ctx.lineTo(i * STEP, edgeY[i])
-      ctx.lineTo(w, cssH)
+      // Extend wave horizontally to fillW before dropping down — prevents diagonal gap
+      ctx.lineTo(fillW, edgeY[cols - 1])
+      ctx.lineTo(fillW, cssH)
       ctx.lineTo(0, cssH)
       ctx.closePath()
-      ctx.fillStyle = '#f0ece4'
+      ctx.fillStyle = bgColor
       ctx.fill()
 
       // 3. Glowing white border — 2 separate passes, shadowBlur konstan per pass
@@ -196,12 +201,14 @@ export default function TornEdge({ clipTargetRef }: TornEdgeProps) {
       if (clipTargetRef?.current) {
         const CLIP_STEP = 6
         let poly = ''
-        for (let i = 0; i * CLIP_STEP <= w; i++) {
+        for (let i = 0; i * CLIP_STEP <= fillW; i++) {
           const col   = Math.min(cols - 1, Math.floor((i * CLIP_STEP) / STEP))
           const waveY = edgeY[col] - OVERLAP_PX
           poly += (poly ? ',' : '') + `${i * CLIP_STEP}px ${waveY.toFixed(1)}px`
         }
-        poly += `,${w}px 9999px,0px 9999px`
+        // Extend to fillW at last wave Y, then sweep bottom — matches canvas fill exactly
+        poly += `,${fillW}px ${(edgeY[cols - 1] - OVERLAP_PX).toFixed(1)}px`
+        poly += `,${fillW}px 9999px,0px 9999px`
         clipTargetRef.current.style.clipPath = `polygon(${poly})`
       }
     }

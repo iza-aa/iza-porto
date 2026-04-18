@@ -8,20 +8,44 @@
   --border-color: #e5e5e5;
   --muted: #737373;
   --muted-bg: #f5f5f5;
+  --color-paper: #f0ece4;
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #ffffff;
-  --border-color: #1f1f1f;
-  --muted: #737373;
-  --muted-bg: #111111;
+  --background: #1a1209;
+  --foreground: #f0ece4;
+  --border-color: #2e1f0e;
+  --muted: #8a7560;
+  --muted-bg: #241508;
+  --color-paper: #1a1209;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   transition: background 0.35s ease, color 0.35s ease;
+}
+
+@keyframes fadeUpIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide scrollbar globally */
+* {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE/Edge */
+}
+*::-webkit-scrollbar {
+  display: none;               /* Chrome/Safari */
+}
+
+/* Disable text I-beam cursor globally */
+* {
+  cursor: default;
+}
+input, textarea, [contenteditable] {
+  cursor: text;
 }
 
 @keyframes fadeInUp {

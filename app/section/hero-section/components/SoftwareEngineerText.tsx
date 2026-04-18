@@ -54,10 +54,10 @@ function useFitWidth() {
     const inner = innerRef.current
     if (!outer || !inner) return
 
-    // Subtract horizontal padding so last letter is never clipped
+    // Subtract padding + safety margin so last letter is never clipped
     const style   = window.getComputedStyle(outer)
     const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
-    const targetW = outer.clientWidth - padding
+    const targetW = outer.clientWidth - padding - 4
     let lo = 8, hi = 600
 
     while (hi - lo > 0.5) {
@@ -66,7 +66,8 @@ function useFitWidth() {
       if (inner.scrollWidth <= targetW) lo = mid
       else hi = mid
     }
-    setFontSize(Math.floor(lo))
+    // Scale to 88% of the max-fit size so there's visible breathing room on all screen sizes
+    setFontSize(Math.floor(lo * 0.88))
   }, [])
 
   useEffect(() => {
@@ -77,6 +78,27 @@ function useFitWidth() {
   }, [fit])
 
   return { outerRef, innerRef, fontSize }
+}
+
+// ─── GlitchChar: original char holds layout space, glitch char overlaid abs ────
+function GlitchChar({ original, display }: { original: string; display: string }) {
+  const isGlitching = display !== original
+  return (
+    <span style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Original always holds the space — invisible when glitching */}
+      <span style={{ visibility: isGlitching ? 'hidden' : 'visible' }}>{original}</span>
+      {/* Glitch char absolutely overlaid — zero layout impact */}
+      {isGlitching && (
+        <span style={{
+          position:  'absolute',
+          left:      '50%',
+          top:       0,
+          transform: 'translateX(-50%)',
+          whiteSpace: 'nowrap',
+        }}>{display}</span>
+      )}
+    </span>
+  )
 }
 
 // ─── AI Star icon (liquid glass) ─────────────────────────────────────────────
@@ -154,7 +176,7 @@ function LiveDataBar() {
   }, [])
 
   return (
-    <div className="flex items-center justify-center gap-5 font-mono text-xs tracking-[0.25em] uppercase select-none text-[#1a1209]/40">
+    <div className="flex items-center justify-center gap-5 font-mono text-xs tracking-[0.25em] uppercase select-none text-[#1a1209]/40 dark:text-[#f0ece4]/40">
       <span>Jakarta, ID</span>
       <span className="opacity-30">·</span>
       <span className="tabular-nums">{time} WIB</span>
@@ -170,7 +192,7 @@ interface Props {
 }
 
 export default function SoftwareEngineerText({ trigger }: Props) {
-  const leftChars = useIdleFlicker(WORD_LEFT, trigger)
+  const leftChars  = useIdleFlicker(WORD_LEFT,  trigger)
   const rightChars = useIdleFlicker(WORD_RIGHT, trigger)
   const { outerRef, innerRef, fontSize } = useFitWidth()
 
@@ -182,18 +204,16 @@ export default function SoftwareEngineerText({ trigger }: Props) {
       className="flex flex-col w-full h-full justify-between py-1.5 overflow-hidden"
     >
       {/* Full-width heading */}
-      <div ref={outerRef} className="flex-1 flex items-center overflow-hidden px-2">
+      <div ref={outerRef} className="flex-1 flex items-center justify-center px-4">
         <div
           ref={innerRef}
-          className="flex items-center whitespace-nowrap leading-[0.9] select-none text-[#1a1209]"
+          className="flex items-center whitespace-nowrap leading-[0.9] select-none text-[#1a1209] dark:text-[#f0ece4]"
           style={{ fontSize, fontFamily: 'var(--font-anton)' }}
         >
           {/* SOFTWARE */}
-          <span>
-            {leftChars.map((ch, i) => (
-              <span key={i}>{ch}</span>
-            ))}
-          </span>
+          {leftChars.map((ch, i) => (
+            <GlitchChar key={i} original={WORD_LEFT[i]} display={ch} />
+          ))}
 
           {/* AI Star icon separator */}
           <span className="inline-flex items-center justify-center px-[0.08em]">
@@ -201,19 +221,11 @@ export default function SoftwareEngineerText({ trigger }: Props) {
           </span>
 
           {/* ENGINEER */}
-          <span>
-            {rightChars.map((ch, i) => (
-              <span key={i}>{ch}</span>
-            ))}
-          </span>
+          {rightChars.map((ch, i) => (
+            <GlitchChar key={i} original={WORD_RIGHT[i]} display={ch} />
+          ))}
         </div>
       </div>
-
-      {/* Divider */}
-      <div className="w-full h-px bg-[#1a1209]/15 mx-0" />
-
-      {/* Live data */}
-      <LiveDataBar />
     </motion.div>
   )
 }

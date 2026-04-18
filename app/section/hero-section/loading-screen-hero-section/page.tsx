@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const LOGO_TEXT = '/,A'
+const LOGO_TEXT = '{`/,4'
 const TYPE_SPEED = 120
 const DELETE_SPEED = 80
 const PAUSE_AFTER_TYPE = 700
@@ -58,7 +58,10 @@ export default function LoadingScreen({ isLoading, progress }: Props) {
           transition={{ duration: 0.8, ease: 'easeInOut' }}
         >
           {/* Logo typewriter */}
-          <div className="text-white font-mono text-6xl font-bold tracking-widest min-h-[1.2em] flex items-center">
+          <div
+            className="text-white text-6xl font-bold tracking-widest min-h-[1.2em] flex items-center"
+            style={{ fontFamily: 'var(--font-inknut-antiqua)' }}
+          >
             <span>{displayLogo}</span>
             <span className="inline-block w-[3px] h-[0.9em] bg-white ml-1 animate-pulse" />
           </div>

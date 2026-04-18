@@ -77,44 +77,18 @@ export default function Navbar() {
       }}
     >
 
-      {/* ── LEFT: Hire me pill ─────────────────────────────────────────────── */}
-      <div className="pointer-events-auto">
-        <button
-          className={`${glass} ${glassHover} rounded-full px-5 py-2.5 flex items-center gap-2.5 cursor-pointer text-white`}
-        >
-          <span className="relative flex size-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
-          </span>
-          <span className="text-sm font-medium text-white/80 whitespace-nowrap">
-            Available for freelance work
-          </span>
-          <span className="text-sm font-semibold text-white">→ Hire me</span>
-        </button>
-      </div>
+      {/* ── LEFT: placeholder to keep justify-between spacing ── */}
+      <div />
 
       {/* ── RIGHT: Nav group ───────────────────────────────────────────────── */}
       <div className="pointer-events-auto flex items-center gap-2">
-
-        {/* Nav links card */}
-        <div className={`${glass} rounded-full px-1.5 py-1.5 flex items-center gap-0.5`}>
-          {(['About', 'Work', 'Contact'] as const).map((item) => (
-            <button
-              key={item}
-              onClick={() => scrollTo(item.toLowerCase())}
-              className={`${glassHover} rounded-full px-4 h-7 text-sm font-medium text-white/80 hover:text-white cursor-pointer`}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
 
         {/* LinkedIn card */}
         <a
           href="https://linkedin.com"
           target="_blank"
           rel="noopener noreferrer"
-          className={`${glass} ${glassHover} rounded-full w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
+          className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
           aria-label="LinkedIn"
         >
           <span className="text-xs font-black tracking-tight leading-none">in</span>
@@ -125,7 +99,7 @@ export default function Navbar() {
           href="https://github.com"
           target="_blank"
           rel="noopener noreferrer"
-          className={`${glass} ${glassHover} rounded-full w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
+          className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
           aria-label="GitHub"
         >
           <GitHubIcon />
@@ -134,7 +108,7 @@ export default function Navbar() {
         {/* Theme toggle card */}
         <button
           onClick={toggleTheme}
-          className={`${glass} ${glassHover} rounded-full w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
+          className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
           aria-label="Toggle theme"
         >
           {isDark ? <SunIcon /> : <MoonIcon />}
