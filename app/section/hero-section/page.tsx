@@ -118,7 +118,7 @@ export default function HeroSection() {
                       exits the top of viewport — max visible at frame 191 (~1.3vh sliver). */}
                   {frameIndex < 191 && (
                     <>
-                      <TornEdge clipTargetRef={textWrapperRef} />
+                      <TornEdge clipTargetRef={textWrapperRef} showGlow={false} showGrain={false} />
                       <div ref={textWrapperRef} className="relative z-20 h-full">
                         <SoftwareEngineerText trigger={revealContent} />
                       </div>

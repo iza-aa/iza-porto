@@ -75,15 +75,21 @@ function widthNoise(nx: number, t: number): number {
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface TornEdgeProps {
   clipTargetRef?: React.RefObject<HTMLDivElement>
+  showGlow?:      boolean
+  showGrain?:     boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function TornEdge({ clipTargetRef }: TornEdgeProps) {
+export default function TornEdge({ clipTargetRef, showGlow = true, showGrain = true }: TornEdgeProps) {
   const canvasRef    = useRef<HTMLCanvasElement>(null)
   const tRef          = useRef(0)
   const rafRef        = useRef<number>(0)
   const cssHRef       = useRef(CANVAS_H)  // actual CSS height, updated by ResizeObserver
   const frameCountRef = useRef(0)
+  const showGlowRef  = useRef(showGlow)
+  const showGrainRef = useRef(showGrain)
+  showGlowRef.current  = showGlow
+  showGrainRef.current = showGrain
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -147,53 +153,58 @@ export default function TornEdge({ clipTargetRef }: TornEdgeProps) {
       ctx.fill()
 
       // 3. Glowing white border — 2 separate passes, shadowBlur konstan per pass
-      ctx.save()
-      ctx.lineCap  = 'round'
-      ctx.lineJoin = 'round'
+      if (showGlowRef.current) {
+        ctx.save()
+        ctx.lineCap  = 'round'
+        ctx.lineJoin = 'round'
 
-      // Pass 1: outer glow — shadowBlur set sekali, lineWidth variabel
-      ctx.shadowColor = 'rgba(255,255,255,0.5)'
-      ctx.shadowBlur  = 22
-      ctx.strokeStyle = 'rgba(255,255,255,0.22)'
-      for (let i = 0; i < cols - 1; i++) {
-        const wn  = wnCache[i]  // B: dari cache
-        const x0  = i * STEP;       const y0 = edgeY[i]
-        const x1  = (i + 1) * STEP; const y1 = edgeY[i + 1]
-        ctx.lineWidth = (2 + wn * 9) + 5
-        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke()
-      }
-
-      // Pass 2: core bright line — shadowBlur set sekali, lineWidth variabel
-      ctx.shadowBlur  = 5
-      ctx.shadowColor = 'rgba(255,255,255,1)'
-      ctx.strokeStyle = 'rgba(255,255,255,0.88)'
-      for (let i = 0; i < cols - 1; i++) {
-        const wn  = wnCache[i]  // B: dari cache
-        const x0  = i * STEP;       const y0 = edgeY[i]
-        const x1  = (i + 1) * STEP; const y1 = edgeY[i + 1]
-        ctx.lineWidth = (2 + wn * 9) * 0.5
-        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke()
-      }
-
-      ctx.restore()
-      // C: fillStyle set sekali per color group (5x total), bukan per dot (1100x)
-      let currentPaletteIdx = -1
-      for (const dot of GRAIN) {
-        const col  = Math.min(cols - 1, Math.floor(dot.nx * cols))
-        const py   = edgeY[col] + dot.dy
-        if (py < -4 || py > cssH + 4) continue
-        const fade  = 1 - Math.abs(dot.dy) / 33
-        const side  = dot.dy > 0 ? 0.5 : 1.0
-        const alpha = dot.baseOpacity * fade * side
-        if (alpha < 0.015) continue
-        if (dot.paletteIdx !== currentPaletteIdx) {
-          ctx.fillStyle = PALETTE_FILL[dot.paletteIdx]  // C: hanya set saat warna berubah
-          currentPaletteIdx = dot.paletteIdx
+        // Pass 1: outer glow — shadowBlur set sekali, lineWidth variabel
+        ctx.shadowColor = 'rgba(255,255,255,0.5)'
+        ctx.shadowBlur  = 22
+        ctx.strokeStyle = 'rgba(255,255,255,0.22)'
+        for (let i = 0; i < cols - 1; i++) {
+          const wn  = wnCache[i]  // B: dari cache
+          const x0  = i * STEP;       const y0 = edgeY[i]
+          const x1  = (i + 1) * STEP; const y1 = edgeY[i + 1]
+          ctx.lineWidth = (2 + wn * 9) + 5
+          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke()
         }
-        ctx.globalAlpha = alpha
-        ctx.fillRect(Math.round(dot.nx * w), Math.round(py), dot.size, dot.size)
+
+        // Pass 2: core bright line — shadowBlur set sekali, lineWidth variabel
+        ctx.shadowBlur  = 5
+        ctx.shadowColor = 'rgba(255,255,255,1)'
+        ctx.strokeStyle = 'rgba(255,255,255,0.88)'
+        for (let i = 0; i < cols - 1; i++) {
+          const wn  = wnCache[i]  // B: dari cache
+          const x0  = i * STEP;       const y0 = edgeY[i]
+          const x1  = (i + 1) * STEP; const y1 = edgeY[i + 1]
+          ctx.lineWidth = (2 + wn * 9) * 0.5
+          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke()
+        }
+
+        ctx.restore()
       }
-      ctx.globalAlpha = 1
+
+      // C: fillStyle set sekali per color group (5x total), bukan per dot (1100x)
+      if (showGrainRef.current) {
+        let currentPaletteIdx = -1
+        for (const dot of GRAIN) {
+          const col  = Math.min(cols - 1, Math.floor(dot.nx * cols))
+          const py   = edgeY[col] + dot.dy
+          if (py < -4 || py > cssH + 4) continue
+          const fade  = 1 - Math.abs(dot.dy) / 33
+          const side  = dot.dy > 0 ? 0.5 : 1.0
+          const alpha = dot.baseOpacity * fade * side
+          if (alpha < 0.015) continue
+          if (dot.paletteIdx !== currentPaletteIdx) {
+            ctx.fillStyle = PALETTE_FILL[dot.paletteIdx]  // C: hanya set saat warna berubah
+            currentPaletteIdx = dot.paletteIdx
+          }
+          ctx.globalAlpha = alpha
+          ctx.fillRect(Math.round(dot.nx * w), Math.round(py), dot.size, dot.size)
+        }
+        ctx.globalAlpha = 1
+      }
 
       // 4. Update clip-path polygon on text wrapper (direct DOM — no re-render)
       // Wave in text-wrapper space = edgeY[i] - OVERLAP_PX
