@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import LoadingScreen from './loading-screen-hero-section/page'
+import LoadingScreen from './loading-screen-hero-section/LoadingScreen'
 import ScrollFrameCanvas from './components/ScrollFrameCanvas'
 import SoftwareEngineerText from './components/SoftwareEngineerText'
 import ContentOverlay from './components/ContentOverlay'

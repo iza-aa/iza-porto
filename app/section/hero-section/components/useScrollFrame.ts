@@ -78,7 +78,7 @@ export function useScrollFrame(
       window.removeEventListener('wheel',     blockIfLocked)
       window.removeEventListener('touchmove', blockIfLocked)
     }
-  }, [sectionRef])
+  }, [sectionRef, snapPoints])
 
   return frameIndex
 }

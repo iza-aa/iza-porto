@@ -218,7 +218,7 @@ export default function TornEdge({ clipTargetRef }: TornEdgeProps) {
       cancelAnimationFrame(rafRef.current)
       ro.disconnect()
     }
-  }, [])
+  }, [clipTargetRef])
 
   return (
     <canvas
