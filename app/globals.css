@@ -20,10 +20,15 @@
   --color-paper: #1a1209;
 }
 
+html {
+  overscroll-behavior: none;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   transition: background 0.35s ease, color 0.35s ease;
+  overscroll-behavior: none;
 }
 
 @keyframes fadeUpIn {

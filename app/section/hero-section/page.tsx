@@ -5,28 +5,20 @@ import { motion } from 'framer-motion'
 import LoadingScreen from './loading-screen-hero-section/LoadingScreen'
 import ScrollFrameCanvas from './components/ScrollFrameCanvas'
 import SoftwareEngineerText from './components/SoftwareEngineerText'
-import ContentOverlay from './components/ContentOverlay'
 import NavOverlay from './components/NavOverlay'
 import TornEdge from './components/TornEdge'
+import AboutContent from '../about-section/AboutContent'
 import { useFramePreloader } from './components/useFramePreloader'
-import { useScrollFrame, SnapPoint } from './components/useScrollFrame'
+import { useScrollFrame } from './components/useScrollFrame'
 import { useAppLoading } from '../../context/LoadingContext'
 
 const MIN_LOADING_MS = 3000
-
-// Snap points — defined outside component so the array reference is stable
-// frame 70: nav flies to top (spring ~700ms)
-// frame 72: "What I Work With" icons auto-animate (~1200ms)
-const SNAP_POINTS: SnapPoint[] = [
-  { frame: 70, duration: 700  },
-  { frame: 79, duration: 1200 },
-]
 
 export default function HeroSection() {
   const sectionRef    = useRef<HTMLDivElement>(null)
   const textWrapperRef = useRef<HTMLDivElement>(null)
   const { frames, loadedCount, totalFrames, isReady } = useFramePreloader()
-  const frameIndex = useScrollFrame(sectionRef, SNAP_POINTS)
+  const frameIndex = useScrollFrame(sectionRef)
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
@@ -71,7 +63,8 @@ export default function HeroSection() {
       {/* Scroll container — 350vh gives ~3.5x screen of scroll travel */}
       <motion.div
         ref={sectionRef}
-        style={{ height: '350vh' }}
+        id="home"
+        style={{ height: '350vh', zIndex: 10, position: 'relative' }}
         className="relative"
         initial={{ opacity: 0 }}
         animate={revealContent ? { opacity: 1 } : { opacity: 0 }}
@@ -82,8 +75,7 @@ export default function HeroSection() {
           {/* ── Video frame — fills full 100vh so wave never shows black ───── */}
           <div className="absolute inset-0">
             <ScrollFrameCanvas frames={frames} frameIndex={frameIndex} />
-            <ContentOverlay frameIndex={frameIndex} />
-            <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={totalFrames} />
+            <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={totalFrames} heroRef={sectionRef} />
           </div>
 
           {/* ── Text zone + curtain — ONE container, scroll up together ──── */}
@@ -103,6 +95,7 @@ export default function HeroSection() {
                   height:     '125vh',
                   transform:  `translateY(${ty}vh)`,
                   willChange: 'transform',
+                  pointerEvents: 'none',
                 }}
               >
                 {/* Text zone — 25vh, top of container = bottom of screen initially */}
@@ -126,8 +119,9 @@ export default function HeroSection() {
                   )}
                 </div>
                 {/* Curtain — 100vh, glued directly below the text zone */}
-                {/* Use --color-paper (#f0ece4 light / #1a1209 dark) to match TornEdge fill */}
-                <div style={{ height: '100vh', background: 'var(--color-paper)' }} />
+                <div style={{ height: '100vh', background: 'var(--color-paper)', pointerEvents: 'auto' }}>
+                  <AboutContent />
+                </div>
               </div>
             )
           })()}

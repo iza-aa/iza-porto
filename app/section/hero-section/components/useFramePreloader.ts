@@ -6,6 +6,7 @@ const TOTAL_FRAMES = 192
 
 export function useFramePreloader() {
   const framesRef = useRef<HTMLImageElement[]>([])
+  const [frames, setFrames] = useState<HTMLImageElement[]>([])
   const [loadedCount, setLoadedCount] = useState(0)
   const [isReady, setIsReady] = useState(false)
 
@@ -23,6 +24,7 @@ export function useFramePreloader() {
         setLoadedCount(count)
         if (count === TOTAL_FRAMES) {
           framesRef.current = images
+          setFrames(images)
           setIsReady(true)
         }
       }
@@ -36,7 +38,7 @@ export function useFramePreloader() {
   }, [])
 
   return {
-    frames: framesRef.current,
+    frames,
     loadedCount,
     totalFrames: TOTAL_FRAMES,
     isReady,

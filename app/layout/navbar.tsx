@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react'
 import { useAppLoading } from '../context/LoadingContext'
 
 // ─── Liquid Glass base styles ─────────────────────────────────────────────────
-const glass =
+const glassDark =
   'backdrop-blur-2xl bg-white/10 border border-white/20 shadow-[0_4px_32px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all duration-200'
+const glassLight =
+  'backdrop-blur-2xl bg-black/5 border border-black/10 shadow-[0_4px_32px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] transition-all duration-200'
 
-const glassHover =
+const glassDarkHover =
   'hover:bg-white/20 hover:border-white/35 hover:shadow-[0_6px_36px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.45)]'
+const glassLightHover =
+  'hover:bg-black/10 hover:border-black/20 hover:shadow-[0_6px_36px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)]'
 
 // ─── GitHub SVG ───────────────────────────────────────────────────────────────
 function GitHubIcon() {
@@ -82,38 +86,45 @@ export default function Navbar() {
 
       {/* ── RIGHT: Nav group ───────────────────────────────────────────────── */}
       <div className="pointer-events-auto flex items-center gap-2">
+        {(() => {
+          const glass      = isDark ? glassDark      : glassLight
+          const glassHover = isDark ? glassDarkHover : glassLightHover
+          const iconColor  = isDark ? 'text-white/80 hover:text-white' : 'text-black/60 hover:text-black'
+          return (
+            <>
+              {/* LinkedIn card */}
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center ${iconColor} cursor-pointer`}
+                aria-label="LinkedIn"
+              >
+                <span className="text-xs font-black tracking-tight leading-none">in</span>
+              </a>
 
-        {/* LinkedIn card */}
-        <a
-          href="https://linkedin.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
-          aria-label="LinkedIn"
-        >
-          <span className="text-xs font-black tracking-tight leading-none">in</span>
-        </a>
+              {/* GitHub card */}
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center ${iconColor} cursor-pointer`}
+                aria-label="GitHub"
+              >
+                <GitHubIcon />
+              </a>
 
-        {/* GitHub card */}
-        <a
-          href="https://github.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
-          aria-label="GitHub"
-        >
-          <GitHubIcon />
-        </a>
-
-        {/* Theme toggle card */}
-        <button
-          onClick={toggleTheme}
-          className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center text-white/80 hover:text-white cursor-pointer`}
-          aria-label="Toggle theme"
-        >
-          {isDark ? <SunIcon /> : <MoonIcon />}
-        </button>
-
+              {/* Theme toggle card */}
+              <button
+                onClick={toggleTheme}
+                className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center ${iconColor} cursor-pointer`}
+                aria-label="Toggle theme"
+              >
+                {isDark ? <SunIcon /> : <MoonIcon />}
+              </button>
+            </>
+          )
+        })()}
       </div>
     </nav>
   )

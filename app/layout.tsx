@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Inknut_Antiqua, Anton } from "next/font/google";
+import { Source_Serif_4, Anton } from "next/font/google";
 import "./globals.css";
 import Navbar from "./layout/navbar";
 import { LoadingProvider } from "./context/LoadingContext";
 
-const inknutAntiqua = Inknut_Antiqua({
+const inknutAntiqua = Source_Serif_4({
   subsets: ["latin"],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: "--font-inknut-antiqua",

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, RefObject } from 'react'
 import { motion } from 'framer-motion'
 
 const FLIGHT_TRIGGER = 70
@@ -19,14 +19,67 @@ interface Props {
   frameIndex: number
   trigger: boolean
   totalFrames: number
+  heroRef: RefObject<HTMLDivElement>
 }
 
-export default function NavOverlay({ frameIndex, trigger }: Props) {
+export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
   const [vw, setVw] = useState(1440)
   const [vh, setVh] = useState(900)
   const [hasFlown, setHasFlown] = useState(false)
   const [flyDone, setFlyDone]   = useState(false)
   const [time, setTime]         = useState('')
+  const [isDark, setIsDark]               = useState(false)
+  const [activeSection, setActiveSection] = useState('home')
+  const [hoveredItem, setHoveredItem]     = useState<string | null>(null)
+  const navLockRef = useRef(false)  // prevent scroll override during click navigation
+
+  useEffect(() => {
+    const update = () => setIsDark(document.documentElement.classList.contains('dark'))
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(document.documentElement, { attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const normalIds = ['contact', 'achievements', 'experience', 'skills', 'project']
+
+    const getActive = () => {
+      if (navLockRef.current) return   // locked during click navigation
+      const scrollY = window.scrollY
+      const mid = window.innerHeight * 0.5
+
+      // Normal sections — iterate bottom-to-top, first one whose top <= mid wins
+      for (const id of normalIds) {
+        const el = document.getElementById(id)
+        if (!el) continue
+        const rect = el.getBoundingClientRect()
+        if (rect.top <= mid) {
+          setActiveSection(id)
+          return
+        }
+      }
+
+      // About — inside hero sticky container, active from 60% scroll onward
+      // No upper bound: normal sections above are checked first, so if #project
+      // is already past mid it returns before reaching here
+      const heroEl = heroRef.current
+      if (heroEl) {
+        const heroTotalScroll = heroEl.offsetHeight - window.innerHeight
+        const progress        = scrollY / heroTotalScroll
+        if (progress >= 0.6) {
+          setActiveSection('about')
+          return
+        }
+      }
+
+      setActiveSection('home')
+    }
+
+    window.addEventListener('scroll', getActive, { passive: true })
+    getActive()
+    return () => window.removeEventListener('scroll', getActive)
+  }, [heroRef])
 
   useEffect(() => {
     const tick = () => setTime(
@@ -56,6 +109,32 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
       setFlyDone(false)
     }
   }, [frameIndex, hasFlown])
+
+  const navigateTo = (label: string) => {
+    navLockRef.current = true
+    clearTimeout((navigateTo as unknown as { _t?: ReturnType<typeof setTimeout> })._t)
+    ;(navigateTo as unknown as { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => {
+      navLockRef.current = false
+    }, 1200)  // unlock after smooth scroll finishes
+
+    if (label === 'home') {
+      setActiveSection('home')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else if (label === 'about') {
+      setActiveSection('about')
+      const hero = heroRef.current
+      if (hero) {
+        const target = hero.offsetTop + hero.offsetHeight - window.innerHeight
+        window.scrollTo({ top: target, behavior: 'smooth' })
+      }
+    } else {
+      const el = document.getElementById(label)
+      if (el) {
+        setActiveSection(label)
+        el.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
 
   // ── Box geometry ──────────────────────────────────────────────────────────
   const BOX_PAD  = 28
@@ -142,14 +221,14 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
           style={{
             fontFamily:    'var(--font-anton)',
             display:       'block',
-            color:         'rgba(0,0,0,0.88)',
+            color:         isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)',
             whiteSpace:    'nowrap',
             lineHeight:    1,
             letterSpacing: '0.01em',
             userSelect:    'none',
           }}
         >
-          iza creation works
+          iza creation labs
         </motion.span>
       </motion.div>
 
@@ -163,7 +242,7 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
           margin:           0,
           width:            LIST_W,
           transformOrigin: 'top left',
-          pointerEvents:   flyDone ? 'auto' : 'none',
+          pointerEvents:   trigger ? 'auto' : 'none',
         }}
         initial={{ opacity: 0 }}
         animate={{
@@ -179,49 +258,78 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
           scale:   spring,
         }}
       >
-        {NAV_ITEMS.map((item) => (
-          <li
-            key={item.label}
-            style={{
-              display:        'flex',
-              justifyContent: 'space-between',
-              alignItems:     'baseline',
-              marginBottom:    NAV_GAP,
-              cursor:          flyDone ? 'pointer' : 'default',
-            }}
-            onClick={() => {
-              if (!flyDone) return
-              const el = document.getElementById(item.label)
-              if (el) el.scrollIntoView({ behavior: 'smooth' })
-            }}
-          >
-            <span
+        {NAV_ITEMS.map((item) => {
+          const isActive = activeSection === item.label
+          const textColor = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)'
+          const dimColor  = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'
+          return (
+            <li
+              key={item.label}
+              onMouseEnter={() => setHoveredItem(item.label)}
+              onMouseLeave={() => setHoveredItem(null)}
               style={{
-                fontFamily:    'var(--font-inknut-antiqua)',
-                fontSize:       NAV_PX,
-                color:         'rgba(0,0,0,0.85)',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                userSelect:    'none',
-                whiteSpace:    'nowrap',
+                display:     'flex',
+                alignItems:  'baseline',
+                marginBottom: NAV_GAP,
+                cursor:       trigger ? 'pointer' : 'default',
               }}
+              onClick={() => navigateTo(item.label)}
             >
-              {item.label}
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--font-inknut-antiqua)',
-                fontSize:    NAV_PX * 0.72,
-                color:      'rgba(0,0,0,0.85)',
-                fontWeight:  700,
-                userSelect: 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {item.roman}
-            </span>
-          </li>
-        ))}
+              {/* Label */}
+              <span
+                style={{
+                  fontFamily:    'var(--font-inknut-antiqua)',
+                  fontSize:       NAV_PX,
+                  color:          isActive ? textColor : dimColor,
+                  fontWeight:     isActive || hoveredItem === item.label ? 700 : 400,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  userSelect:    'none',
+                  whiteSpace:    'nowrap',
+                  flexShrink:     0,
+                }}
+              >
+                {item.label}
+              </span>
+
+              {/* Dots — fill remaining space, only visible for active item */}
+              <span
+                style={{
+                  flex:          1,
+                  overflow:      'hidden',
+                  whiteSpace:    'nowrap',
+                  letterSpacing: '0.35em',
+                  fontSize:       NAV_PX * 0.70,
+                  color:          isActive ? textColor : 'transparent',
+                  padding:       '0 0 0 5px',
+                  userSelect:    'none',
+                  alignSelf:     'flex-end',
+                  lineHeight:     1.6,
+                  WebkitMaskImage: 'linear-gradient(to right, black 70%, transparent 100%)',
+                  maskImage:       'linear-gradient(to right, black 90%, transparent 100%)',
+                }}
+              >
+                {'·'.repeat(80)}
+              </span>
+
+              {/* Roman numeral */}
+              <span
+                style={{
+                  fontFamily:  'var(--font-inknut-antiqua)',
+                  fontSize:     NAV_PX * 0.72,
+                  color:        isActive ? textColor : dimColor,
+                  fontWeight:   isActive ? 700 : 400,
+                  userSelect:  'none',
+                  whiteSpace:  'nowrap',
+                  flexShrink:   0,
+                  marginLeft:  '10px',
+                }}
+              >
+                {item.roman}
+              </span>
+            </li>
+          )
+        })}
       </motion.ul>
 
       {/* ── Data bar — rides up with container, sticks at navbar level ── */}
@@ -244,7 +352,7 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
               gap:            10,
               fontFamily:    'var(--font-inknut-antiqua)',
               fontSize:       10,
-              color:         'rgba(0,0,0,0.5)',
+              color:         isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
               whiteSpace:    'nowrap',
