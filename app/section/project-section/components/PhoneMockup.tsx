@@ -33,12 +33,12 @@ export default function PhoneMockup({ children, bgSrc, className = '' }: PhoneMo
       <div
         className="absolute overflow-hidden"
         style={{
-          top: '4.2%',
-          left: '4.8%',
-          right: '4.8%',
-          bottom: '5%',
-          // Match the rounded display corners of iPhone 14 Pro
-          borderRadius: '11.5% / 5.6%',
+          top: '5%',
+          left: '5.5%',
+          right: '5.5%',
+          bottom: '4.6%',
+          /* clip-path works reliably even when children have transform: scale() */
+          clipPath: 'inset(0 round 8%)',
         }}
       >
         {/* Optional atmospheric / app-screenshot background */}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Source_Serif_4, Anton } from "next/font/google";
+import { Source_Serif_4, Anton, Pinyon_Script, Archivo_Black } from "next/font/google";
 import "./globals.css";
 import Navbar from "./layout/navbar";
 import { LoadingProvider } from "./context/LoadingContext";
@@ -15,6 +15,20 @@ const anton = Anton({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-anton",
+  display: "swap",
+});
+
+const pinyonScript = Pinyon_Script({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-pinyon-script",
+  display: "swap",
+});
+
+const archivoBlack = Archivo_Black({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-archivo-black",
   display: "swap",
 });
 
@@ -38,7 +52,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inknutAntiqua.variable} ${anton.variable} ${inknutAntiqua.className}`}>
+      <body className={`${inknutAntiqua.variable} ${anton.variable} ${pinyonScript.variable} ${archivoBlack.variable} ${inknutAntiqua.className}`}>
         <LoadingProvider>
           <Navbar />
           {children}

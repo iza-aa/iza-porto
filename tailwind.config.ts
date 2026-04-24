@@ -10,6 +10,12 @@ const config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'archivo-black': ['var(--font-archivo-black)'],
+        'anton': ['var(--font-anton)'],
+        'pinyon-script': ['var(--font-pinyon-script)'],
+        'inknut-antiqua': ['var(--font-inknut-antiqua)'],
+      },
       keyframes: {
         // Nama keyframe sesuai dengan yang digunakan di kelas animasi
         "infinite-scroll": {

@@ -8,6 +8,7 @@ interface LiquidGlassProps {
   className?: string
   animated?: boolean
   padding?: string
+  variant?: 'default' | 'navbar'
 }
 
 export const LiquidGlass: React.FC<LiquidGlassProps> = ({
@@ -15,6 +16,7 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
   className = '',
   animated = true,
   padding = 'p-5',
+  variant = 'default',
 }) => {
   const liquidVariants = {
     animate: {
@@ -28,10 +30,19 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
     },
   }
 
+  const glassStyles = {
+    default:
+      'backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl transition-all duration-200',
+    navbar:
+      'backdrop-blur-2xl bg-white/10 rounded-sm border border-white/20 shadow-[0_4px_32px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all duration-200 hover:bg-white/20 hover:border-white/30 hover:shadow-[0_6px_36px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.45)]',
+  }
+
+  const showOrbs = animated && variant === 'default'
+
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div className={`relative F ${className}`}>
       {/* Floating colour orbs */}
-      {animated && (
+      {showOrbs && (
         <>
           <motion.div
             variants={liquidVariants}
@@ -54,7 +65,7 @@ export const LiquidGlass: React.FC<LiquidGlassProps> = ({
       )}
 
       {/* Glass surface */}
-      <div className={`relative backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 shadow-xl ${padding}`}>
+      <div className={`${glassStyles[variant]} ${padding}`}>
         {/* Frosted shimmer edge */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/15 to-transparent pointer-events-none" />
         {/* Content */}

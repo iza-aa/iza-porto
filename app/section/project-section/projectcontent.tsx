@@ -1,41 +1,111 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import LeopardBg from './components/LeopardBg'
-import PhoneMockup from './components/PhoneMockup'
-import LiquidGlass from '../../components/LiquidGlass'
+import { SubTitle, TitleHeading } from '../../components/TitleHeading'
+import { ProjectCard } from '../../components/ProjectMockups'
+
+const IFRAME_W  = 430
+const IFRAME_H  = 932
+/** Extra pixels the iframe renders below the fold so scroll animation has content */
+const SCROLL_PX = 900
+
+/**
+ * Renders an iframe at 430×(IFRAME_H+SCROLL_PX), scales it to fill the container,
+ * blocks all pointer interaction, and auto-scrolls down then back in a loop.
+ */
+function ScaledIframe({ src, title }: { src: string; title: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect()
+      setScale(Math.min(width / IFRAME_W, height / IFRAME_H))
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div ref={containerRef} className="absolute inset-0 overflow-hidden">
+      {/* scale wrapper */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: IFRAME_W,
+          transformOrigin: 'top left',
+          transform: `scale(${scale})`,
+        }}
+      >
+        {/* scroll animation wrapper — moves the iframe upward */}
+        <div style={{ animation: 'phone-auto-scroll 18s ease-in-out infinite' }}>
+          <iframe
+            src={src}
+            title={title}
+            loading="lazy"
+            sandbox="allow-scripts allow-same-origin"
+            style={{
+              border: 'none',
+              width: IFRAME_W,
+              /* tall enough to contain scrolled content */
+              height: IFRAME_H + SCROLL_PX,
+              display: 'block',
+              pointerEvents: 'none',
+            }}
+          />
+        </div>
+      </div>
+
+      {/* keyframes defined once per render — harmless duplicate in dev HMR */}
+      <style>{`
+        @keyframes phone-auto-scroll {
+          0%,  8%  { transform: translateY(0px); }
+          42%, 58% { transform: translateY(-${SCROLL_PX}px); }
+          92%, 100% { transform: translateY(0px); }
+        }
+      `}</style>
+    </div>
+  )
+}
 
 const projects = [
   {
-    title: 'IZA POS',
-    desc: 'Point-of-sale system with inventory management, real-time sales analytics, and multi-outlet support.',
-    tech: ['Next.js', 'Supabase', 'Tailwind'],
-    year: '2024',
-    /** Image shown inside the phone mockup */
-    phoneImage: '/images/IZA-POS-V2.png',
+    title: 'Hidro',
+    desc: 'Modern platform specializing in premium water and fluid solutions, combining efficiency, innovation, and reliability.',
+    year: '2026',
+    /** Image shown inside the phone mockup (fallback when no iframeUrl) */
+    phoneImage: '',
     /** Atmospheric background for the phone screen */
-    phoneBg: '/images/phone-bg.jpg',
+    phoneBg: '/asset/project-section/projectbg/whiteyellow.jpeg',
+    /** Live site shown in an iframe inside the phone */
+    iframeUrl: 'https://hidro-phi.vercel.app',
     featured: true,
+    mockupType: 'full' as const,
   },
   {
-    title: 'E-Commerce App',
-    desc: 'Full-stack online store with cart, checkout, and admin dashboard.',
-    tech: ['React', 'Node.js', 'PostgreSQL'],
-    year: '2024',
+    title: 'iza Point of Sale',
+    desc: 'Smart point-of-sale system with AI insights, integrated inventory and ordering, and secure role-based access control.',
+    year: '2025',
+    phoneImage: '/asset/project-section/projectbg/IZA-POS.png',
+    phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
+    mockupType: 'random' as const,
   },
-  {
-    title: 'Chat App',
-    desc: 'Real-time messaging app with rooms and presence indicators.',
-    tech: ['Socket.io', 'Express', 'MongoDB'],
-    year: '2023',
-  },
-  {
-    title: 'Task Manager',
-    desc: 'Drag-and-drop kanban board with authentication and team support.',
-    tech: ['Next.js', 'Supabase', 'DnD Kit'],
-    year: '2023',
-  },
+{
+  title: "UII Management Information System",
+  desc: "A network and data center asset management system with maintenance tracking and OCR for fast, accurate data capture.",
+  year: "2026",
+  phoneImage: "/asset/project-section/projectbg/uii.png",
+  phoneBg: "/asset/project-section/projectbg/hall.jpeg",
+  mockupType: "random" as const,
+},
 ] as const
 
 function ExtraCanvas() {
@@ -62,23 +132,61 @@ function ExtraCanvas() {
   }, [])
 
   return (
-    <div ref={containerRef} className="relative w-full h-screen overflow-hidden pointer-events-none">
-      {/* Kiri 280px: transparan — kanan: dark brown */}
-      <div className="absolute inset-y-0 left-0 md:left-[280px] right-0 bg-gradient-to-b from-[#091716] to-[#182725]" />
+    <div ref={containerRef} className="relative w-full overflow-hidden">
+      {/* Dark bg gradient */}
+      <div className="absolute inset-0 bg-[#DDDDD1] ml-60" />
 
       {/* Content — slides up from below */}
       <div
         ref={innerRef}
-        className="relative z-10 h-full flex flex-col justify-center px-6 py-24 md:pr-16 md:pl-[280px] lg:pr-24 lg:pl-[320px] md:py-32"
+        className="relative z-10 py-6 md:pr-6 lg:pl-[270px] md:py-6"
         style={{
           opacity: 0,
           transform: 'translateY(60px)',
           transition: 'opacity 0.7s ease, transform 0.7s ease',
         }}
       >
-        {/* Placeholder — replace with real content */}
-        <p className="text-xs uppercase tracking-widest text-white/40 mb-3">Next</p>
-        <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">More Coming</h2>
+        {/* 2-Columns Project Grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[auto_auto_auto] justify-start">
+          {projects.map((project, i) => {
+            const mockupType = 'mockupType' in project ? project.mockupType : 'full'
+
+            return (
+              <ProjectCard
+                key={i}
+                size={mockupType}
+                src={project.phoneBg}
+                alt={`${project.title} background`}
+                title={project.title}
+                description={project.desc}
+                className="group"
+              >
+                {'iframeUrl' in project && project.iframeUrl ? (
+                  <ScaledIframe src={project.iframeUrl} title={project.title} />
+                ) : 'phoneImage' in project && project.phoneImage ? (
+                  mockupType === 'random' ? (
+                    <Image
+                      src={project.phoneImage}
+                      alt={project.title}
+                      width={450}
+                      height={550}
+                      className="object-contain"
+                      draggable={false}
+                    />
+                  ) : (
+                    <Image
+                      src={project.phoneImage}
+                      alt={project.title}
+                      fill
+                      className="object-cover object-top opacity-90"
+                      draggable={false}
+                    />
+                  )
+                ) : null}
+              </ProjectCard>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
@@ -100,122 +208,21 @@ export default function ProjectContent() {
       <div className="relative z-10 min-h-screen flex flex-col justify-center px-6 py-24 md:pr-16 md:pl-[280px] lg:pr-24 lg:pl-[320px] md:py-32 pointer-events-none">
 
       {/* Heading */}
-      <div className="mb-16">
-        <p className="text-xs uppercase tracking-widest text-white/50 mb-3">Selected Work</p>
-        <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight">
-          Projects
-        </h2>
-      </div>
-
-      {/* Project list */}
-      <div className="flex flex-col divide-y divide-white/20 pointer-events-auto">
-        {projects.map((project, i) => {
-          const isFeatured = 'featured' in project && project.featured
-
-          /* ── Featured card — wide layout with phone mockup ── */
-          if (isFeatured) {
-            return (
-              <div
-                key={i}
-                className="group flex flex-col md:flex-row md:items-center justify-between gap-8 py-10 cursor-pointer"
-              >
-                {/* Left: text */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-3">
-                    <span className="text-xs text-white/40">{String(i + 1).padStart(2, '0')}</span>
-                    <h3 className="text-2xl md:text-3xl font-semibold text-white group-hover:translate-x-2 transition-transform duration-300">
-                      {project.title}
-                    </h3>
-                  </div>
-                  <p className="text-sm text-white/60 max-w-md mb-4">{project.desc}</p>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-xs text-white/40">{project.year}</span>
-                    {project.tech.map((t) => (
-                      <span
-                        key={t}
-                        className="text-xs px-2 py-1 rounded-full border border-white/30 text-white/70"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Right: phone mockup */}
-                <div className="w-36 md:w-44 shrink-0 mx-auto md:mx-0">
-                  <PhoneMockup
-                    bgSrc={'phoneBg' in project ? project.phoneBg : undefined}
-                    className="drop-shadow-2xl"
-                  >
-                    {/* Phone screen content */}
-                    <div className="relative w-full h-full bg-gradient-to-b from-[#0d1b2a] to-[#1b2838] overflow-hidden">
-                      {/* Project screenshot fills the screen */}
-                      {'phoneImage' in project && project.phoneImage && (
-                        <Image
-                          src={project.phoneImage}
-                          alt={project.title}
-                          fill
-                          className="object-cover object-top opacity-70"
-                          draggable={false}
-                        />
-                      )}
-
-                      {/* LiquidGlass caption pinned to bottom */}
-                      <div className="absolute bottom-4 left-2 right-2">
-                        <LiquidGlass animated padding="p-3">
-                          <p className="text-white font-semibold text-xs leading-tight">{project.title}</p>
-                          <p className="text-white/60 text-[10px] mt-0.5">{project.tech.join(' · ')}</p>
-                        </LiquidGlass>
-                      </div>
-                    </div>
-                  </PhoneMockup>
-                </div>
-              </div>
-            )
-          }
-
-          /* ── Regular minimal card ── */
-          return (
-            <div
-              key={i}
-              className="group flex flex-col md:flex-row md:items-center justify-between gap-4 py-8 cursor-pointer"
-            >
-              {/* Left */}
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
-                  <span className="text-xs text-white/40">{String(i + 1).padStart(2, '0')}</span>
-                  <h3 className="text-2xl md:text-3xl font-semibold text-white group-hover:translate-x-2 transition-transform duration-300">
-                    {project.title}
-                  </h3>
-                </div>
-                <p className="text-sm text-white/60 max-w-lg">{project.desc}</p>
-              </div>
-
-              {/* Right */}
-              <div className="flex flex-col items-start md:items-end gap-2">
-                <span className="text-xs text-white/40">{project.year}</span>
-                <div className="flex flex-wrap gap-2">
-                  {project.tech.map((t) => (
-                    <span
-                      key={t}
-                      className="text-xs px-2 py-1 rounded-full border border-white/30 text-white/70"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )
-        })}
+      <div className="mb-12">
+        <TitleHeading
+          title="project labs"
+          subtitle="Projects centered on application development, robust system design, and scalable, high-performance architecture, with an emphasis on efficiency, maintainability, and seamless user experience."
+          className="text-white line-height-0"
+          titleClassName="text-4xl md:text-6xl"
+          subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+        />
       </div>
 
       </div>{/* end z-10 wrapper */}
     </section>
 
-      {/* Extra 100vh canvas section */}
-      <ExtraCanvas 
-      />
+      {/* Extra 100vh canvas section (Tidak diubah, untuk Next Col BG) */}
+      <ExtraCanvas/>
       
     </>
   )
