@@ -166,8 +166,11 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
   // Position: visual bottom sits 80px above the wave (wave top = vh*0.75)
   const FINAL_NAV_Y    = Math.round(vh * 0.75 - 20 - scaledNavH)
 
-  const spring          = { type: 'spring', stiffness: 80, damping: 18, mass: 1 } as const
-  const fadeTransition  = { duration: 0.45, ease: 'easeOut' } as const
+  const spring         = { type: 'spring', stiffness: 80, damping: 18, mass: 1 } as const
+  const fadeTransition = { duration: 0.45, ease: 'easeOut' } as const
+
+  // ── Logika Override Warna untuk Section Project ────────────────────────────
+  const isProject = activeSection === 'project'
 
   return (
     <>
@@ -221,11 +224,13 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
           style={{
             fontFamily:    'var(--font-anton)',
             display:       'block',
-            color:         isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)',
+            // Override warna di sini
+            color:         isProject ? 'rgba(255,255,255,0.88)' : (isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)'),
             whiteSpace:    'nowrap',
             lineHeight:    1,
             letterSpacing: '0.01em',
             userSelect:    'none',
+            transition:    'color 0.3s ease', // Tambahan transisi warna yang halus
           }}
         >
           iza creation labs
@@ -260,8 +265,16 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
       >
         {NAV_ITEMS.map((item) => {
           const isActive = activeSection === item.label
-          const textColor = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)'
-          const dimColor  = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'
+          
+          // Override warna di sini
+          const textColor = isProject 
+            ? 'rgba(255,255,255,0.85)' 
+            : (isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)')
+            
+          const dimColor  = isProject 
+            ? 'rgba(255,255,255,0.35)' 
+            : (isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)')
+
           return (
             <li
               key={item.label}
@@ -287,6 +300,7 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
                   userSelect:    'none',
                   whiteSpace:    'nowrap',
                   flexShrink:     0,
+                  transition:    'color 0.3s ease', // Transisi halus
                 }}
               >
                 {item.label}
@@ -307,6 +321,7 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
                   lineHeight:     1.6,
                   WebkitMaskImage: 'linear-gradient(to right, black 70%, transparent 100%)',
                   maskImage:       'linear-gradient(to right, black 90%, transparent 100%)',
+                  transition:    'color 0.3s ease',
                 }}
               >
                 {'·'.repeat(80)}
@@ -323,6 +338,7 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
                   whiteSpace:  'nowrap',
                   flexShrink:   0,
                   marginLeft:  '10px',
+                  transition:  'color 0.3s ease',
                 }}
               >
                 {item.roman}
@@ -338,11 +354,17 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
         const p          = Math.max(0, Math.min(1, (frameIndex - 116) / (192 - 116)))
         // Interpolate from (vh - 20px) at p=0 to 26px at p=1
         const topPx      = Math.round((1 - p) * (vh - 20) + p * 26)
+        
+        // Override warna di sini
+        const dataBarColor = isProject 
+          ? 'rgba(255,255,255,0.5)' 
+          : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)')
+
         return (
           <div
             style={{
               position:     'fixed',
-              zIndex:        99,
+              zIndex:        999,
               top:            topPx,
               left:          '50%',
               transform:     'translateX(-50%)',
@@ -352,11 +374,12 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
               gap:            10,
               fontFamily:    'var(--font-inknut-antiqua)',
               fontSize:       10,
-              color:         isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+              color:          dataBarColor,
               letterSpacing: '0.18em',
               textTransform: 'uppercase',
               whiteSpace:    'nowrap',
               userSelect:    'none',
+              transition:    'color 0.3s ease',
             }}
           >
             <span>Jakarta, ID</span>
