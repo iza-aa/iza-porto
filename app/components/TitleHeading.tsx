@@ -49,12 +49,9 @@ export function TitleHeading({
   subtitleClassName = '',
 }: TitleHeadingProps) {
   return (
-    <div className={`grid grid-cols-2 grid-rows-2 gap-0 items-start ${className}`}>
-      <div className="col-start-1 row-start-1">
-        <Title className={titleClassName}>{title}</Title>
-      </div>
-
-      <div className="col-start-2 row-start-2 mt-12">
+    <div className={`flex flex-col items-start ${className}`}>
+      <Title className={titleClassName}>{title}</Title>
+      <div className="mt-10">
         <SubTitle className={subtitleClassName}>{subtitle}</SubTitle>
       </div>
     </div>

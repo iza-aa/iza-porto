@@ -92,7 +92,7 @@ const projectsBatch1 = [
   {
     title: 'iza Point of Sale',
     desc: 'Smart point-of-sale system with AI insights, integrated inventory and ordering, and secure role-based access control.',
-    phoneImage: '/asset/project-section/projectbg/IZA-POS.png',
+    phoneImage: '/asset/project-section/projectbg/izapos.png',
     phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
     mockupType: 'random' as const,
   },
@@ -119,7 +119,7 @@ const projectsBatch2 = [
     title: 'Dummy Project 5',
     desc: 'Second dummy project for the half-width column layout.',
     phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
-    phoneImage: '/asset/project-section/projectbg/IZA-POS.png',
+    phoneImage: '/asset/project-section/projectbg/izapos.png',
     mockupType: 'random' as const,
     overrideW: 'max-w-full w-full', 
     overrideH: 'aspect-[16/13]'
@@ -183,10 +183,8 @@ function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
                   <Image
                     src={project.phoneImage}
                     alt={project.title}
-                    fill={mockupType !== 'random'}
-                    width={mockupType === 'random' ? 1200 : undefined} 
-                    height={mockupType === 'random' ? 675 : undefined}
-                    className={mockupType === 'random' ? "object-contain" : "object-cover object-top opacity-90"}
+                    fill
+                    className={mockupType === 'random' ? "object-contain p-6 md:p-10 drop-shadow-2xl" : "object-cover object-top opacity-90"}
                     draggable={false}
                   />
                 ) : null}
@@ -275,17 +273,15 @@ export default function ProjectContent() {
       <div className="relative z-10 w-full" style={{ marginTop: '-90vh' }}>
         
         {/* --- Batch 1 --- */}
-        <section className="relative min-h-screen flex flex-col justify-center px-6 py-24 md:pr-16 md:pl-[280px] lg:pr-24 lg:pl-[320px] md:py-32 pointer-events-none">
-          <div className="mb-12">
-            <TitleHeading
-              title="project labs"
-              subtitle="Standard 3-column architecture."
-              className="text-white"
-              titleClassName="text-4xl md:text-6xl"
-              subtitleClassName="text-base md:text-lg mt-0 text-white/70"
-            />
-          </div>
-        </section>
+        <div className="mt-40 pt-10 mb-12 lg:pl-[320px] md:pl-[280px] px-6 pointer-events-none">
+          <TitleHeading
+            title="project labs"
+            subtitle="Standard 3-column architecture."
+            className="text-white mb-20 pb-1"
+            titleClassName="text-4xl md:text-6xl"
+            subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+          />
+        </div>
 
         <div className="relative w-full">
           <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
@@ -307,9 +303,9 @@ export default function ProjectContent() {
            <TitleHeading
               title="extended labs"
               subtitle="Dual-column showcase for detailed project exploration."
-              className={isDark ? "text-white" : "text-black"}
-              titleClassName="text-3xl md:text-5xl text-white dark:text-black"
-              subtitleClassName="text-base text-white/60 dark:text-black/60"
+              className="text-white mb-20 pb-1"
+              titleClassName="text-4xl md:text-6xl"
+              subtitleClassName="text-base md:text-lg mt-0 text-white/70"
             />
         </div>
 
@@ -327,6 +323,9 @@ export default function ProjectContent() {
           <ExtraCanvas data={projectsBatch2} cols={2} />
           <ConvinceLayer isDark={isDark} data={projectsBatch2} features={featuresBatch2} cols={2} />
         </div>
+
+        {/* Space extra untuk memperlihatkan LeopardBg tanpa overlay paper */}
+        <div className="w-full h-[20vh] pointer-events-none" />
       </div>
     </div>
   )

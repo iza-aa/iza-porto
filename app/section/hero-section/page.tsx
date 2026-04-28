@@ -7,6 +7,7 @@ import ScrollFrameCanvas from './components/ScrollFrameCanvas'
 import SoftwareEngineerText from './components/SoftwareEngineerText'
 import NavOverlay from './components/NavOverlay'
 import TornEdge from './components/TornEdge'
+import TornEdgeInverted from '../../components/tornedge-inverted'
 import AboutContent from '../about-section/AboutContent'
 import { useFramePreloader } from './components/useFramePreloader'
 import { useScrollFrame } from './components/useScrollFrame'
@@ -60,6 +61,9 @@ export default function HeroSection() {
     <>
       <LoadingScreen isLoading={showLoading} progress={progress} />
 
+      {/* NavOverlay outside motion.div so fixed position sticks to viewport globally */}
+      <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={totalFrames} heroRef={sectionRef} />
+
       {/* Scroll container — 350vh gives ~3.5x screen of scroll travel */}
       <motion.div
         ref={sectionRef}
@@ -75,7 +79,6 @@ export default function HeroSection() {
           {/* ── Video frame — fills full 100vh so wave never shows black ───── */}
           <div className="absolute inset-0">
             <ScrollFrameCanvas frames={frames} frameIndex={frameIndex} />
-            <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={totalFrames} heroRef={sectionRef} />
           </div>
 
           {/* ── Text zone + curtain — ONE container, scroll up together ──── */}
@@ -119,8 +122,10 @@ export default function HeroSection() {
                   )}
                 </div>
                 {/* Curtain — 100vh, glued directly below the text zone */}
-                <div style={{ height: '100vh', background: 'var(--color-paper)', pointerEvents: 'auto' }}>
+                <div style={{ position: 'relative', height: '100vh', background: 'var(--color-paper)', pointerEvents: 'auto' }}>
                   <AboutContent />
+                  {/* Terapkan inverted torn edge di bagian paling bawah About Section */}
+                  <TornEdgeInverted />
                 </div>
               </div>
             )

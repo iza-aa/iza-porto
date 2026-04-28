@@ -174,32 +174,6 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
 
   return (
     <>
-      {/* ── Background effects: vignette + border + separator ─────────────── */}
-      {/* Fades in with trigger, fades out as soon as flight fires             */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none z-30"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: trigger && !hasFlown ? 1 : 0 }}
-        transition={fadeTransition}
-      >
-        {/* Vignette */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(ellipse 55% 60% at 50% 44%, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0) 100%)',
-          }}
-        />
-        {/* Border */}
-        <div
-          style={{
-            position: 'absolute',
-            left: boxL, top: boxT,
-            width: BOX_W, height: BOX_H,
-            border: '1px solid rgba(120,120,120,0.45)',
-          }}
-        />
-      </motion.div>
-
       {/* ── Title — ONE element, springs from idle → final ─────────────────── */}
       <motion.div
         className="pointer-events-none"

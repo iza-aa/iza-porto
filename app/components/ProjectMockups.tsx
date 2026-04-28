@@ -67,7 +67,7 @@ function getTextStyles(size: 'full' | 'half' | 'mac' | 'random' = 'full') {
 export function FullPhoneMockup({ src, alt = 'Project mockup', className = '', children }: MockupProps) {
   return (
     <div className={`relative z-[60] w-full aspect-[38/60] ${className}`}>
-      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-center justify-center rounded-lg">
+      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-center justify-center">
         {src && <Image src={src} alt={alt} fill className="object-cover absolute inset-0 z-0 opacity-80" />}
         <div className="relative z-10 w-[60%] drop-shadow-2xl transition-transform duration-500 group-hover:-translate-y-2">
           <PhoneMockup className="w-full h-full">
@@ -82,7 +82,7 @@ export function FullPhoneMockup({ src, alt = 'Project mockup', className = '', c
 export function HalfPhoneMockup({ src, alt = 'Project mockup', className = '', children }: MockupProps) {
   return (
     <div className={`relative z-[60] w-full aspect-[51/85] pt-1 px-1 md:pt-2 md:px-2 2xl:pt-2.5 2xl:px-2.5 pb-0 ${className}`}>
-      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-end justify-center rounded-t-xl">
+      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-end justify-center ">
         {src && <Image src={src} alt={alt} fill className="object-cover absolute inset-0 z-0 opacity-80" />}
         <div className="relative z-10 w-[44%] drop-shadow-2xl transition-transform duration-500 group-hover:-translate-y-2">
           <PhoneMockup className="w-full h-full">
@@ -97,7 +97,7 @@ export function HalfPhoneMockup({ src, alt = 'Project mockup', className = '', c
 export function MacMockup({ src, alt = 'Project mockup', className = '', children }: MockupProps) {
   return (
     <div className={`relative z-[60] w-full aspect-[34/25] p-1.5 md:p-2 2xl:p-2.5 ${className}`}>
-      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-center justify-center rounded-xl">
+      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-center justify-center ">
         {src && <Image src={src} alt={alt} fill className="object-cover absolute inset-0 z-0 opacity-80" />}
         <div className="relative z-10 w-full h-full bg-gradient-to-b from-[#1a1a1a] to-[#2a2a2a] rounded-lg border border-gray-600 flex items-center justify-center">
           <div className="text-white/50 text-xs md:text-sm">Mac Mockup</div>
@@ -113,7 +113,7 @@ export function RandomMockup({ src, alt = 'Project mockup', className = '', chil
   return (
     // Gunakan overrideH jika ada, jika tidak gunakan default aspect ratio
     <div className={`relative z-[60] w-full ${overrideH ? overrideH : 'aspect-[25/28]'} ${className}`}>
-      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-center justify-center rounded-lg">
+      <div className="relative w-full h-full overflow-hidden bg-[#182725] flex items-center justify-center ">
         {src && <Image src={src} alt={alt} fill className="object-cover absolute inset-0 z-0 opacity-80" />}
         <div className="relative z-10 w-full h-full flex items-center justify-center">{children}</div>
       </div>
