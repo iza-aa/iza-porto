@@ -8,7 +8,7 @@ interface TornEdgeInvertedProps {
   color?: string
 }
 
-export default function TornEdgeInverted({ showGlow = false }: TornEdgeInvertedProps) {
+export default function TornEdgeInverted({ showGlow = false, color: propColor }: TornEdgeInvertedProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cssHRef = useRef(CANVAS_H)
   const [isDark, setIsDark] = useState(false)
@@ -21,7 +21,7 @@ export default function TornEdgeInverted({ showGlow = false }: TornEdgeInvertedP
     return () => observer.disconnect()
   }, [])
 
-  const color = isDark ? '#0f0a08' : '#e8e0d4'
+  const color = propColor || (isDark ? '#0f0a08' : '#e8e0d4')
 
   useEffect(() => {
     const canvas = canvasRef.current

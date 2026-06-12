@@ -1,24 +1,18 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import LoadingScreen from './loading-screen-hero-section/LoadingScreen'
-import ScrollFrameCanvas from './components/ScrollFrameCanvas'
-import SoftwareEngineerText from './components/SoftwareEngineerText'
-import NavOverlay from './components/NavOverlay'
-import TornEdge from './components/TornEdge'
-import TornEdgeInverted from '../../components/tornedge-inverted'
-import AboutContent from '../about-section/AboutContent'
-import { useFramePreloader } from './components/useFramePreloader'
+import LoadingScreen from '../../components/LoadingScreen'
+import LivingCanvasHero from './components/LivingCanvasHero'
+import NavOverlay from '../../components/NavOverlay'
 import { useScrollFrame } from './components/useScrollFrame'
 import { useAppLoading } from '../../context/LoadingContext'
 
-const MIN_LOADING_MS = 3000
+const MIN_LOADING_MS = 1200
+const TOTAL_FRAMES = 192
 
 export default function HeroSection() {
-  const sectionRef    = useRef<HTMLDivElement>(null)
-  const textWrapperRef = useRef<HTMLDivElement>(null)
-  const { frames, loadedCount, totalFrames, isReady } = useFramePreloader()
+  const sectionRef = useRef<HTMLDivElement>(null)
   const frameIndex = useScrollFrame(sectionRef)
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
@@ -26,7 +20,6 @@ export default function HeroSection() {
   const { setAppLoading } = useAppLoading()
   const startTimeRef = useRef(Date.now())
 
-  // Tick elapsed time so progress bar stays in sync with minimum duration
   useEffect(() => {
     const id = setInterval(() => {
       const e = Date.now() - startTimeRef.current
@@ -36,18 +29,26 @@ export default function HeroSection() {
     return () => clearInterval(id)
   }, [])
 
-  const frameProgress = totalFrames > 0 ? (loadedCount / totalFrames) * 100 : 0
-  const timeProgress  = Math.min(100, (elapsed / MIN_LOADING_MS) * 100)
-  // Min: bar follows whichever is SLOWER — fast frames = time drives, slow network = frames drive
-  // 100% only when both time AND frames are done → dismiss fires immediately after
-  const progress      = Math.min(frameProgress, timeProgress)
+  const [paintingReady, setPaintingReady] = useState(false)
+  useEffect(() => {
+    const img = new window.Image()
+    img.src = '/asset/hero-section/patmos.jpg'
+    const done = () => setPaintingReady(true)
+    if (img.complete) done()
+    else {
+      img.onload = done
+      img.onerror = done
+    }
+  }, [])
+
+  const timeProgress = Math.min(100, (elapsed / MIN_LOADING_MS) * 100)
+  const progress = Math.min(timeProgress, paintingReady ? 100 : 92)
 
   useEffect(() => {
-    if (!isReady) return
-    const elapsed   = Date.now() - startTimeRef.current
-    const remaining = Math.max(0, MIN_LOADING_MS - elapsed)
+    if (!paintingReady) return
+    const elapsedNow = Date.now() - startTimeRef.current
+    const remaining = Math.max(0, MIN_LOADING_MS - elapsedNow)
     const timer = setTimeout(() => {
-      // Wait 200ms extra so progress bar visually hits 100% before fade-out
       setTimeout(() => {
         setShowLoading(false)
         setAppLoading(false)
@@ -55,82 +56,58 @@ export default function HeroSection() {
       }, 200)
     }, remaining)
     return () => clearTimeout(timer)
-  }, [isReady, setAppLoading])
+  }, [paintingReady, setAppLoading])
+
+  const burnProgress = Math.max(0, Math.min(1, (frameIndex - 64) / 48))
+  const projectBurnProgress = Math.max(0, Math.min(1, (frameIndex - 136) / 40))
+  const projectIntroProgress = Math.max(0, Math.min(1, (frameIndex - 176) / 10))
 
   return (
     <>
       <LoadingScreen isLoading={showLoading} progress={progress} />
+      <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={TOTAL_FRAMES} heroRef={sectionRef} />
 
-      {/* NavOverlay outside motion.div so fixed position sticks to viewport globally */}
-      <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={totalFrames} heroRef={sectionRef} />
-
-      {/* Scroll container — 350vh gives ~3.5x screen of scroll travel */}
       <motion.div
         ref={sectionRef}
         id="home"
-        style={{ height: '350vh', zIndex: 10, position: 'relative' }}
+        style={{ height: '520vh', zIndex: 10, position: 'relative' }}
         className="relative"
         initial={{ opacity: 0 }}
         animate={revealContent ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
-        <div className="sticky top-0 h-screen">
-
-          {/* ── Video frame — fills full 100vh so wave never shows black ───── */}
+        <div className="sticky top-0 h-screen overflow-hidden">
           <div className="absolute inset-0">
-            <ScrollFrameCanvas frames={frames} frameIndex={frameIndex} />
+            <LivingCanvasHero
+              frameIndex={frameIndex}
+              totalFrames={TOTAL_FRAMES}
+              burnProgress={burnProgress}
+              projectBurnProgress={projectBurnProgress}
+              aboutContentProgress={1}
+            />
           </div>
 
-          {/* ── Text zone + curtain — ONE container, scroll up together ──── */}
-          {/* Container: text zone (25vh) on top, curtain (100vh) below it    */}
-          {/* bottom: -100vh anchors it so text zone sits at screen bottom     */}
-          {/* translateY 0 → -100vh brings curtain to fill full viewport       */}
-          {(() => {
-            const p  = Math.max(0, Math.min(1, (frameIndex - 116) / (192 - 116)))
-            const ty = p * -100
-            return (
-              <div
-                style={{
-                  position:   'absolute',
-                  left:        0,
-                  right:       0,
-                  bottom:     '-100vh',
-                  height:     '125vh',
-                  transform:  `translateY(${ty}vh)`,
-                  willChange: 'transform',
-                  pointerEvents: 'none',
-                }}
-              >
-                {/* Text zone — 25vh, top of container = bottom of screen initially */}
-                <div style={{ position: 'relative', height: '25vh' }}>
-                  {/* Helper fill: z-5, starts at 44px (below max wave excursion ±36px).
-                      Matches TornEdge fill color so no gap/snap when TornEdge unmounts.
-                      Area 0-44px stays transparent → video shows through wave as normal. */}
-                  <div style={{
-                    position: 'absolute', top: '44px', bottom: 0, left: 0, right: 0,
-                    background: 'var(--color-paper)', zIndex: 5,
-                  }} />
-                  {/* Unmount heavy components (rAF + glitch timers) once text zone bottom
-                      exits the top of viewport — max visible at frame 191 (~1.3vh sliver). */}
-                  {frameIndex < 191 && (
-                    <>
-                      <TornEdge clipTargetRef={textWrapperRef} showGlow={false} showGrain={false} />
-                      <div ref={textWrapperRef} className="relative z-20 h-full">
-                        <SoftwareEngineerText trigger={revealContent} />
-                      </div>
-                    </>
-                  )}
-                </div>
-                {/* Curtain — 100vh, glued directly below the text zone */}
-                <div style={{ position: 'relative', height: '100vh', background: 'var(--color-paper)', pointerEvents: 'auto' }}>
-                  <AboutContent />
-                  {/* Terapkan inverted torn edge di bagian paling bawah About Section */}
-                  <TornEdgeInverted />
+          <div
+            className="absolute inset-0 z-20 pointer-events-none"
+            style={{
+              opacity: projectIntroProgress,
+              transform: `translateY(${(1 - projectIntroProgress) * 18}px)`,
+              willChange: 'opacity, transform',
+            }}
+          >
+            <div className="h-full w-full px-6 pt-[18vh] md:pl-[300px] lg:pl-[360px]">
+              <div className="max-w-5xl">
+                <h2 className="font-inknut-antiqua text-5xl leading-none text-[#f5f0e8] md:text-7xl lg:text-8xl">
+                  Project Labs
+                </h2>
+                <div className="mt-7 flex items-center gap-4 text-[#f5f0e8]/70">
+                  <span className="text-xs">◇</span>
+                  <span className="h-px w-16 bg-[#f5f0e8]/35" />
+                  <p className="font-pinyon-script text-3xl md:text-4xl">Standard 3-column architecture.</p>
                 </div>
               </div>
-            )
-          })()}
-
+            </div>
+          </div>
         </div>
       </motion.div>
     </>

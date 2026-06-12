@@ -3,16 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useAppLoading } from '../context/LoadingContext'
 
-// ─── Liquid Glass base styles ─────────────────────────────────────────────────
+// ─── Antique parchment button styles ─────────────────────────────────────────
 const glassDark =
-  'backdrop-blur-2xl bg-white/10 border border-white/20 shadow-[0_4px_32px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.35)] transition-all duration-200'
+  'backdrop-blur-sm bg-[#241508]/70 border border-[#c9a227]/40 shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-all duration-200'
 const glassLight =
-  'backdrop-blur-2xl bg-black/5 border border-black/10 shadow-[0_4px_32px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] transition-all duration-200'
+  'backdrop-blur-sm bg-[#f0e9d8]/80 border border-[#b08d57]/50 shadow-[0_4px_24px_rgba(92,71,56,0.12)] transition-all duration-200'
 
 const glassDarkHover =
-  'hover:bg-white/20 hover:border-white/35 hover:shadow-[0_6px_36px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.45)]'
+  'hover:bg-[#241508]/90 hover:border-[#c9a227]/70 hover:shadow-[0_6px_28px_rgba(0,0,0,0.4)]'
 const glassLightHover =
-  'hover:bg-black/10 hover:border-black/20 hover:shadow-[0_6px_36px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.7)]'
+  'hover:bg-[#ece3cf] hover:border-[#b08d57] hover:shadow-[0_6px_28px_rgba(92,71,56,0.2)]'
 
 // ─── GitHub SVG ───────────────────────────────────────────────────────────────
 function GitHubIcon() {
@@ -89,23 +89,12 @@ export default function Navbar() {
         {(() => {
           const glass      = isDark ? glassDark      : glassLight
           const glassHover = isDark ? glassDarkHover : glassLightHover
-          const iconColor  = isDark ? 'text-white/80 hover:text-white' : 'text-black/60 hover:text-black'
+          const iconColor  = isDark ? 'text-[#e6dfce]/80 hover:text-[#e6dfce]' : 'text-[#5c4738]/80 hover:text-[#5c4738]'
           return (
             <>
-              {/* LinkedIn card */}
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center ${iconColor} cursor-pointer`}
-                aria-label="LinkedIn"
-              >
-                <span className="text-xs font-black tracking-tight leading-none">in</span>
-              </a>
-
               {/* GitHub card */}
               <a
-                href="https://github.com"
+                href="https://github.com/iza-aa"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`${glass} ${glassHover} rounded-xl w-10 h-10 flex items-center justify-center ${iconColor} cursor-pointer`}

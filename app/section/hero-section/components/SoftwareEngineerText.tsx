@@ -7,40 +7,55 @@ const WORD_LEFT = 'SOFTWARE'
 const WORD_RIGHT = 'ENGINEER'
 const GLITCH_CHARS = '01!@#$%ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop'
 
-// ─── Idle flicker hook ────────────────────────────────────────────────────────
-function useIdleFlicker(word: string, trigger: boolean) {
-  const [chars, setChars] = useState(() => word.split(''))
+// ─── Self-contained flicker char ─────────────────────────────────────────────
+// State lives INSIDE each char: one flicker re-renders one <span>, not the
+// whole heading (16 chars + SVG). Same timing law as the original:
+// wait (0.3–3.3s) → glitch (60–170ms) → restore → rest (1–6s) → repeat.
+function FlickerChar({ original, trigger }: { original: string; trigger: boolean }) {
+  const [display, setDisplay] = useState(original)
 
   useEffect(() => {
     if (!trigger) return
-    const timers: ReturnType<typeof setTimeout>[] = []
+    let t1: ReturnType<typeof setTimeout>
+    let t2: ReturnType<typeof setTimeout>
+    let t3: ReturnType<typeof setTimeout>
 
-    const flickerAt = (i: number) => {
-      const t1 = setTimeout(() => {
-        setChars(prev => {
-          const next = [...prev]
-          next[i] = GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]
-          return next
-        })
-        const t2 = setTimeout(() => {
-          setChars(prev => {
-            const next = [...prev]
-            next[i] = word[i]
-            return next
-          })
-          const t3 = setTimeout(() => flickerAt(i), 1000 + Math.random() * 5000)
-          timers.push(t3)
+    const cycle = () => {
+      t1 = setTimeout(() => {
+        setDisplay(GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)])
+        t2 = setTimeout(() => {
+          setDisplay(original)
+          t3 = setTimeout(cycle, 1000 + Math.random() * 5000)
         }, 60 + Math.random() * 110)
-        timers.push(t2)
       }, Math.random() * 3000 + 300)
-      timers.push(t1)
     }
+    cycle()
 
-    word.split('').forEach((_, i) => flickerAt(i))
-    return () => timers.forEach(clearTimeout)
-  }, [trigger, word])
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+      setDisplay(original)
+    }
+  }, [trigger, original])
 
-  return chars
+  const isGlitching = display !== original
+  return (
+    <span style={{ position: 'relative', display: 'inline-block' }}>
+      {/* Original always holds the space — invisible when glitching */}
+      <span style={{ visibility: isGlitching ? 'hidden' : 'visible' }}>{original}</span>
+      {/* Glitch char absolutely overlaid — zero layout impact */}
+      {isGlitching && (
+        <span style={{
+          position:  'absolute',
+          left:      '50%',
+          top:       0,
+          transform: 'translateX(-50%)',
+          whiteSpace: 'nowrap',
+        }}>{display}</span>
+      )}
+    </span>
+  )
 }
 
 // ─── Fit-to-width hook ────────────────────────────────────────────────────────
@@ -78,27 +93,6 @@ function useFitWidth() {
   }, [fit])
 
   return { outerRef, innerRef, fontSize }
-}
-
-// ─── GlitchChar: original char holds layout space, glitch char overlaid abs ────
-function GlitchChar({ original, display }: { original: string; display: string }) {
-  const isGlitching = display !== original
-  return (
-    <span style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Original always holds the space — invisible when glitching */}
-      <span style={{ visibility: isGlitching ? 'hidden' : 'visible' }}>{original}</span>
-      {/* Glitch char absolutely overlaid — zero layout impact */}
-      {isGlitching && (
-        <span style={{
-          position:  'absolute',
-          left:      '50%',
-          top:       0,
-          transform: 'translateX(-50%)',
-          whiteSpace: 'nowrap',
-        }}>{display}</span>
-      )}
-    </span>
-  )
 }
 
 // ─── AI Star icon (liquid glass) ─────────────────────────────────────────────
@@ -155,46 +149,17 @@ function AIStarIcon({ size }: { size: number }) {
   )
 }
 
-// ─── Live data bar ────────────────────────────────────────────────────────────
-function LiveDataBar() {
-  const [time, setTime] = useState('')
-
-  useEffect(() => {
-    const update = () =>
-      setTime(
-        new Intl.DateTimeFormat('en-US', {
-          timeZone: 'Asia/Jakarta',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        }).format(new Date())
-      )
-    update()
-    const id = setInterval(update, 1000)
-    return () => clearInterval(id)
-  }, [])
-
-  return (
-    <div className="flex items-center justify-center gap-5 font-mono text-xs tracking-[0.25em] uppercase select-none text-[#1a1209]/40 dark:text-[#f0ece4]/40">
-      <span>Jakarta, ID</span>
-      <span className="opacity-30">·</span>
-      <span className="tabular-nums">{time} WIB</span>
-      <span className="opacity-30">·</span>
-      <span>4 Projects</span>
-    </div>
-  )
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 interface Props {
   trigger: boolean
+  burnProgress?: number
 }
 
-export default function SoftwareEngineerText({ trigger }: Props) {
-  const leftChars  = useIdleFlicker(WORD_LEFT,  trigger)
-  const rightChars = useIdleFlicker(WORD_RIGHT, trigger)
+export default function SoftwareEngineerText({ trigger, burnProgress = 0 }: Props) {
   const { outerRef, innerRef, fontSize } = useFitWidth()
+  const emberOpacity = Math.max(0, Math.min(1, burnProgress))
+  const textBurn = Math.max(0, Math.min(1, burnProgress / 0.34))
+  const textOpacity = 1 - Math.max(0, (textBurn - 0.78) / 0.22)
 
   return (
     <motion.div
@@ -202,17 +167,37 @@ export default function SoftwareEngineerText({ trigger }: Props) {
       animate={trigger ? { opacity: 1 } : { opacity: 0 }}
       transition={{ duration: 0.3 }}
       className="flex flex-col w-full h-full justify-between py-1.5 overflow-hidden"
+      style={{ opacity: textOpacity }}
     >
       {/* Full-width heading */}
       <div ref={outerRef} className="flex-1 flex items-center justify-center px-4">
         <div
           ref={innerRef}
-          className="flex items-center whitespace-nowrap leading-[0.9] select-none text-[#1a1209] dark:text-[#f0ece4]"
-          style={{ fontSize, fontFamily: 'var(--font-anton)' }}
+          className="relative flex items-center whitespace-nowrap leading-[0.9] select-none text-[#1a1209] dark:text-[#f0ece4]"
+          style={{
+            fontSize,
+            fontFamily: 'var(--font-anton)',
+            filter: textBurn > 0.18 ? `blur(${textBurn * 0.8}px)` : 'none',
+            textShadow: burnProgress > 0.05
+              ? `0 0 ${Math.round(24 * textBurn)}px rgba(237,122,34,${0.72 * textBurn})`
+              : 'none',
+          }}
         >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-[8%] h-[22%]"
+            style={{
+              opacity: emberOpacity,
+              background:
+                'linear-gradient(90deg, transparent, rgba(239,111,32,0.72), rgba(246,202,91,0.44), transparent)',
+              filter: `blur(${12 + burnProgress * 14}px)`,
+              transform: `translateY(${-burnProgress * 18}px) scaleY(${1 + burnProgress * 0.55})`,
+              mixBlendMode: 'screen',
+            }}
+          />
           {/* SOFTWARE */}
-          {leftChars.map((ch, i) => (
-            <GlitchChar key={i} original={WORD_LEFT[i]} display={ch} />
+          {WORD_LEFT.split('').map((ch, i) => (
+            <FlickerChar key={i} original={ch} trigger={trigger} />
           ))}
 
           {/* AI Star icon separator */}
@@ -221,8 +206,8 @@ export default function SoftwareEngineerText({ trigger }: Props) {
           </span>
 
           {/* ENGINEER */}
-          {rightChars.map((ch, i) => (
-            <GlitchChar key={i} original={WORD_RIGHT[i]} display={ch} />
+          {WORD_RIGHT.split('').map((ch, i) => (
+            <FlickerChar key={i} original={ch} trigger={trigger} />
           ))}
         </div>
       </div>

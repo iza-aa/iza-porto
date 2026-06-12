@@ -6,7 +6,8 @@
       "WebSearch",
       "Bash(npm run *)",
       "Bash(git checkout *)",
-      "Bash(curl -s http://localhost:3000)"
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(claude doctor *)"
     ]
   }
 }

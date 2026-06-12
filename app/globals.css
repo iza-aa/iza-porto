@@ -24,6 +24,11 @@ html {
   overscroll-behavior: none;
 }
 
+/* Antique gold text selection */
+::selection {
+  background: rgba(176, 141, 87, 0.35);
+}
+
 body {
   color: var(--foreground);
   background: var(--background);

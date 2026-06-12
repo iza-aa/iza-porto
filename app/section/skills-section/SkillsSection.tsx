@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useRef, useState, useEffect, useMemo } from 'react'
-import { useScroll, useMotionValueEvent, motion, AnimatePresence } from 'framer-motion'
+import { useScroll, useTransform, motion, AnimatePresence } from 'framer-motion'
 import TornEdge, { CANVAS_H, BASE_Y, tornNoiseStatic } from '../../components/tornedge2'
 import { TitleHeading } from '../../components/TitleHeading'
 import LiquidGlass from '../../components/LiquidGlass'
-import DitheringImage from './DitheringImage'
+import TornEdgeInverted from '../../components/tornedge-inverted'
+
 
 const LOCAL_EMOJIS = [
   'call-me-hand_1f919.png',
@@ -103,7 +104,7 @@ const TechNode = ({
 
   return (
     <div
-      className="absolute w-20 h-20"
+      className="absolute w-20 h-20 ml-3"
       style={{ left: `${skill.pos.x}%`, top: `${skill.pos.y}%`, zIndex }}
     >
       <motion.div
@@ -116,6 +117,7 @@ const TechNode = ({
       >
         <div className={`relative z-10 w-20 h-20 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
           {/* Background texture removed as requested */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- small SVG icon inside physics-animated node; next/image breaks tuned sizing */}
           <img
             src={skill.nodeIcon || skill.icon}
             alt={skill.name}
@@ -133,6 +135,7 @@ const TechNode = ({
                 const emojiFilename = LOCAL_EMOJIS[emojiIndex];
 
                 return (
+                  // eslint-disable-next-line @next/next/no-img-element -- tiny emoji PNG driven by CSS fly animation
                   <img
                     key={`emoji-${i}`}
                     src={`/asset/skill-section/emojis/${emojiFilename}`}
@@ -159,9 +162,10 @@ const TechNode = ({
                 padding="p-3"
                 className={`w-64 !rounded-none border shadow-2xl shrink-0 ${isDark ? '!bg-[#1a1612] !border-[#3a2e24] !text-[#e6dfce]' : '!bg-[#2c241c] !border-[#1a1612] !text-[#f0eae1]'}`}
                 variant="navbar"
-                animated={false}
+                animated={true}
               >
                 <div className="flex items-center gap-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- small SVG icon in hover card */}
                   <img src={skill.icon} alt={skill.name} className="w-12 h-12 object-contain drop-shadow-md shrink-0" />
                   <div>
                     <h4 className="font-bold text-xl mb-1 tracking-tight leading-none">{skill.name}</h4>
@@ -190,9 +194,7 @@ const TechNode = ({
 // ─── LAYERS ──────────────────────────────────────────────────────────────
 
 const ArtGalleryLayer = ({ isDark }: { isDark: boolean }) => {
-  const bgColor = isDark ? '#231e18' : '#f9f6f0'
-  const textColor = isDark ? '#d4c4a8' : '#5c4738'
-  const dotColor = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.05)'
+  const textColor = isDark ? '#d4c4a8' : '#f2eadc'
 
   const rotations = useMemo(() => skillsData.map(() => Math.random() * 14 - 7), []);
 
@@ -200,11 +202,17 @@ const ArtGalleryLayer = ({ isDark }: { isDark: boolean }) => {
     <div
       className="absolute inset-0 w-full h-full transition-colors duration-300"
       style={{
-        backgroundColor: bgColor,
-        backgroundImage: `radial-gradient(${dotColor} 1px, transparent 1px)`,
-        backgroundSize: '32px 32px',
+        backgroundImage:
+          'linear-gradient(90deg, rgba(5,4,3,0.88), rgba(11,8,5,0.52) 48%, rgba(4,3,2,0.82)), url("/asset/project-section/projectbg/redcape.jpeg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.08] mix-blend-overlay"
+        style={{ backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")', backgroundSize: '520px' }}
+      />
       <div className="max-w-7xl mx-auto w-full h-full flex flex-col px-8 md:px-16 pt-24">
         <div className="mb-12 opacity-70">
           <h2 className="text-4xl md:text-6xl font-serif italic mb-2 tracking-wide" style={{ color: textColor }}>Gallery of Mastery</h2>
@@ -232,7 +240,6 @@ const ArtGalleryLayer = ({ isDark }: { isDark: boolean }) => {
 
 const AwakenedLayer = ({ isDark }: { isDark: boolean }) => {
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
-  const bgColor = isDark ? '#1a1612' : '#e6dfce';
 
   const hoveredData = skillsData.find(s => s.id === hoveredSkill);
   const hoveredSkillPos = hoveredData ? hoveredData.pos : null;
@@ -240,13 +247,23 @@ const AwakenedLayer = ({ isDark }: { isDark: boolean }) => {
   return (
     <div
       className="absolute inset-0 w-full h-full pointer-events-auto overflow-hidden transition-colors duration-300"
-      style={{ backgroundColor: bgColor }}
+      style={{
+        backgroundImage:
+          'radial-gradient(ellipse at 68% 42%, rgba(175,45,58,0.18), transparent 42%), linear-gradient(90deg, rgba(8,6,4,0.88), rgba(17,10,8,0.58) 50%, rgba(7,5,3,0.9)), url("/asset/project-section/projectbg/redcape.jpeg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
-      <div className="max-w-7xl mx-auto w-full h-full flex flex-col md:flex-row px-8 md:px-16 pt-24 pb-16">
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.08] mix-blend-overlay"
+        style={{ backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")', backgroundSize: '520px' }}
+      />
+      <div className="w-full h-full flex flex-col lg:flex-row items-center pt-24 pb-16">
         
-        {/* Left Side: Title and Network Graph */}
-        <div className="flex-1 flex flex-col relative z-10 pr-4">
-          <div className="mb-4 pointer-events-none relative z-10">
+        {/* Left Side: Title */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-center relative z-10 lg:pl-[320px] md:pl-[280px] px-6 pr-4">
+          <div className="pointer-events-none relative z-10 mb-8 lg:mb-0">
             <TitleHeading
               title="tech network"
               subtitle="Worldwide connections."
@@ -254,8 +271,11 @@ const AwakenedLayer = ({ isDark }: { isDark: boolean }) => {
               subtitleClassName=""
             />
           </div>
+        </div>
 
-          <div className="relative w-full max-w-lg lg:max-w-xl flex-1 min-h-[400px] mt-4">
+        {/* Right Side: Network Graph */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10 mt-12 lg:mt-0">
+          <div className="relative w-full max-w-lg lg:max-w-xl flex-1 min-h-[400px]">
             
             {/* 
               BACKGROUND IMAGE UNTUK IKON
@@ -264,6 +284,7 @@ const AwakenedLayer = ({ isDark }: { isDark: boolean }) => {
               - Untuk memperbesar/memperkecil: ubah 'w-[120%]' (120% dari lebar container) atau 'scale-100'.
                 Misal mau lebih besar, ganti jadi 'w-[150%]' atau tambahkan 'scale-125'.
             */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- decorative art positioned by percentage transforms */}
             <img
               src="/asset/skill-section/background.png"
               alt="Skills Background"
@@ -285,14 +306,6 @@ const AwakenedLayer = ({ isDark }: { isDark: boolean }) => {
           </div>
         </div>
 
-        {/* Right side for dithering image and future content */}
-        <div className="w-full md:w-1/2 lg:w-[45vw] xl:w-[45vw] mr-5 lg:absolute lg:right-0 lg:top-[6rem] flex flex-col justify-start items-end relative z-20 mt-16 md:mt-0">
-          <div className="w-full">
-            <DitheringImage src="/asset/skill-section/dithering.jpeg" />
-          </div>
-          {/* Ruang kosong di bawah untuk konten selanjutnya */}
-        </div>
-
       </div>
     </div>
   )
@@ -306,7 +319,6 @@ interface SkillsSectionProps {
 export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const [sliderPos, setSliderPos] = useState(0)
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -322,31 +334,39 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
     offset: ['start 120%', 'end end']
   })
 
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    setSliderPos(latest * 100)
-  })
+  // Semua nilai turunan scroll dihitung sebagai MotionValue dan ditulis
+  // langsung ke style elemen — komponen ini tidak pernah re-render saat scroll.
+  const clipPathMV = useTransform(scrollYProgress, (v) =>
+    `polygon(0 0, ${v * 100}% 0, ${v * 100}% 100%, 0 100%)`
+  )
+  const lineLeft = useTransform(scrollYProgress, (v) => `${Math.min(v * 100, 99.9)}%`)
+  const lineOpacity = useTransform(scrollYProgress, (v) => (v * 100 >= 100 ? 0 : 1))
+  const lineBoxShadow = useTransform(scrollYProgress, (v) =>
+    v * 100 < 99
+      ? `0 0 15px ${isDark ? 'rgba(199,185,159,0.5)' : 'rgba(140,107,69,0.5)'}`
+      : 'none'
+  )
+  const extensionHeight = useTransform(scrollYProgress, (v) =>
+    `${CANVAS_H - (BASE_Y + tornNoiseStatic(v))}px`
+  )
 
   if (!isVisible) return null
-
-  const nx = sliderPos / 100
-  const waveY = BASE_Y + tornNoiseStatic(nx)
-  const extensionHeight = CANVAS_H - waveY
 
   const lineColor = isDark ? '#c7b99f' : '#8c6b45';
 
   return (
-    <div id="skills" ref={containerRef} className="relative w-full h-[200vh]">
+    <div ref={containerRef} className="relative w-full h-[200vh] overflow-x-clip">
 
       {/* ─── 1. TORN EDGE 2 LAPIS ─── */}
       <div className="absolute top-0 w-full z-20 pointer-events-none">
         {/* Lapis Dasar (Art Gallery) */}
-        <TornEdge color={isDark ? "#231e18" : "#f9f6f0"} showGlow={false} />
+        <TornEdge color="rgba(10,7,5,0.24)" showGlow={true} />
 
         {/* Lapis Atas (Node Graph) */}
         <TornEdge
-          color={isDark ? "#1a1612" : "#e6dfce"}
+          color="rgba(10,7,5,0.2)"
           showGlow={false}
-          clipPath={`polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`}
+          clipPath={clipPathMV}
         />
       </div>
 
@@ -367,41 +387,39 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
         .emoji-fly-0 { animation: emoji-waterfall 2.5s infinite ease-in-out; }
         .emoji-fly-1 { animation: emoji-waterfall-alt 2.8s infinite ease-in-out 0.4s; }
       `}</style>
-      <div className="sticky top-0 w-full h-screen z-30 overflow-hidden">
+      <div className="sticky top-0 w-full h-screen z-30">
 
         {/* Layer 1: Art Gallery / Canvas Placeholders */}
         <ArtGalleryLayer isDark={isDark} />
 
         {/* Layer 2: Awakened Tech Universe */}
-        <div
+        <motion.div
           className="absolute inset-0 z-10 select-none pointer-events-none"
-          style={{
-            clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
-            willChange: 'clip-path'
-          }}
+          style={{ clipPath: clipPathMV, willChange: 'clip-path' }}
         >
           <AwakenedLayer isDark={isDark} />
-        </div>
+        </motion.div>
 
         {/* ─── GARIS VERTIKAL & EKSTENSI DINAMIS ─── */}
         {/* The line fades out when slider reaches 100% */}
-        <div
-          className={`absolute top-0 bottom-0 z-40 w-[2px] pointer-events-none transition-opacity duration-300 ${sliderPos >= 100 ? 'opacity-0' : 'opacity-100'}`}
+        <motion.div
+          className="absolute top-0 bottom-0 z-40 w-[2px] pointer-events-none transition-opacity duration-300"
           style={{
-            left: `${sliderPos}%`,
+            left: lineLeft,
+            opacity: lineOpacity,
             backgroundColor: lineColor,
-            boxShadow: `0 0 15px ${isDark ? 'rgba(199,185,159,0.5)' : 'rgba(140,107,69,0.5)'}`
+            boxShadow: lineBoxShadow,
           }}
         >
-          <div
+          <motion.div
             className="absolute bottom-full left-0 w-full"
-            style={{ height: `${extensionHeight}px`, backgroundColor: lineColor }}
+            style={{ height: extensionHeight, backgroundColor: lineColor }}
           />
 
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-12 border-2 flex items-center justify-center rounded-sm"
             style={{
-              backgroundColor: isDark ? '#231e18' : '#f9f6f0',
+              backgroundColor: 'rgba(18,13,9,0.82)',
               borderColor: lineColor,
               boxShadow: `0 0 10px ${isDark ? 'rgba(199,185,159,0.3)' : 'rgba(140,107,69,0.3)'}`
             }}
@@ -411,9 +429,12 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
               <div className="w-[2px] h-4" style={{ backgroundColor: lineColor }}></div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
       </div>
+
+      {/* ─── 3. TORN EDGE BAWAH ─── */}
+      <TornEdgeInverted color="rgba(10,7,5,0.28)" />
     </div>
   )
 }

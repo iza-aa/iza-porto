@@ -6,8 +6,8 @@ import LeopardBg from './components/LeopardBg'
 import { SubTitle, TitleHeading } from '../../components/TitleHeading'
 import { ProjectCard } from '../../components/ProjectMockups'
 
-const IFRAME_W  = 430
-const IFRAME_H  = 932
+const IFRAME_W = 430
+const IFRAME_H = 932
 const SCROLL_PX = 900
 
 function getColumnWidth(size: 'full' | 'half' | 'mac' | 'random' = 'full') {
@@ -27,6 +27,11 @@ function getColumnWidth(size: 'full' | 'half' | 'mac' | 'random' = 'full') {
 function ScaledIframe({ src, title }: { src: string; title: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
+  // Live iframe = a whole website running its own JS. Mount it only once the
+  // card approaches the viewport, and pause the auto-scroll animation while
+  // offscreen so it costs nothing when not visible.
+  const [shouldMount, setShouldMount] = useState(false)
+  const [inView, setInView] = useState(false)
 
   useEffect(() => {
     const el = containerRef.current
@@ -41,6 +46,20 @@ function ScaledIframe({ src, title }: { src: string; title: string }) {
     return () => ro.disconnect()
   }, [])
 
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting)
+        if (entry.isIntersecting) setShouldMount(true) // mount once, keep alive
+      },
+      { rootMargin: '300px' }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden">
       <div
@@ -53,20 +72,27 @@ function ScaledIframe({ src, title }: { src: string; title: string }) {
           transform: `scale(${scale})`,
         }}
       >
-        <div style={{ animation: 'phone-auto-scroll 18s ease-in-out infinite' }}>
-          <iframe
-            src={src}
-            title={title}
-            loading="lazy"
-            sandbox="allow-scripts allow-same-origin"
-            style={{
-              border: 'none',
-              width: IFRAME_W,
-              height: IFRAME_H + SCROLL_PX,
-              display: 'block',
-              pointerEvents: 'none',
-            }}
-          />
+        <div
+          style={{
+            animation: 'phone-auto-scroll 18s ease-in-out infinite',
+            animationPlayState: inView ? 'running' : 'paused',
+          }}
+        >
+          {shouldMount && (
+            <iframe
+              src={src}
+              title={title}
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin"
+              style={{
+                border: 'none',
+                width: IFRAME_W,
+                height: IFRAME_H + SCROLL_PX,
+                display: 'block',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
         </div>
       </div>
       <style>{`
@@ -88,6 +114,7 @@ const projectsBatch1 = [
     phoneBg: '/asset/project-section/projectbg/whiteyellow.jpeg',
     iframeUrl: 'https://hidro-phi.vercel.app',
     mockupType: 'full' as const,
+    showHoverHint: true,
   },
   {
     title: 'iza Point of Sale',
@@ -112,7 +139,7 @@ const projectsBatch2 = [
     phoneBg: '/asset/project-section/projectbg/hall.jpeg',
     phoneImage: '/asset/project-section/projectbg/uii.png',
     mockupType: 'random' as const,
-    overrideW: 'max-w-full w-full', 
+    overrideW: 'max-w-full w-full',
     overrideH: 'aspect-[16/13]'
   },
   {
@@ -121,7 +148,7 @@ const projectsBatch2 = [
     phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
     phoneImage: '/asset/project-section/projectbg/izapos.png',
     mockupType: 'random' as const,
-    overrideW: 'max-w-full w-full', 
+    overrideW: 'max-w-full w-full',
     overrideH: 'aspect-[16/13]'
   },
 ]
@@ -129,7 +156,7 @@ const projectsBatch2 = [
 // ─── KOMPONEN EXTRA CANVAS ────────────────────────────────────────────────────
 function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const innerRef     = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const inner = innerRef.current
@@ -138,7 +165,7 @@ function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          inner.style.opacity   = '1'
+          inner.style.opacity = '1'
           inner.style.transform = 'translateY(0)'
           obs.disconnect()
         }
@@ -176,6 +203,7 @@ function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
                 className="group"
                 overrideW={project.overrideW}
                 overrideH={project.overrideH}
+                showHoverHint={project.showHoverHint}
               >
                 {project.iframeUrl ? (
                   <ScaledIframe src={project.iframeUrl} title={project.title} />
@@ -210,26 +238,26 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
         <div className={`grid grid-cols-1 gap-6 justify-start ${cols === 2 ? 'md:grid-cols-2' : 'md:grid-cols-[auto_auto_auto]'}`}>
           {data.map((project, idx) => {
             const mockupType = project.mockupType || 'full'
-            const colWidthClass = project.overrideW 
-              ? `w-full ${project.overrideW}` 
+            const colWidthClass = project.overrideW
+              ? `w-full ${project.overrideW}`
               : getColumnWidth(mockupType)
-              
+
             const columnFeatures = features[idx] || []
 
             return (
               <div key={idx} className={`${colWidthClass} flex flex-col gap-10 pr-4`}>
                 {columnFeatures.map((feature, fIdx) => (
                   <div key={fIdx} className="flex flex-col xl:flex-row gap-2 xl:gap-4 items-start pr-4">
-                     <div className="w-full xl:w-[45%]">
-                       <h4 className={`font-bold text-[15px] leading-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-black'}`}>
-                         {feature.title}
-                       </h4>
-                     </div>
-                     <div className="w-full xl:w-[55%]">
-                       <p className={`text-sm leading-relaxed font-medium transition-colors duration-500 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-                         {feature.desc}
-                       </p>
-                     </div>
+                    <div className="w-full xl:w-[45%]">
+                      <h4 className={`font-bold text-[15px] leading-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-black'}`}>
+                        {feature.title}
+                      </h4>
+                    </div>
+                    <div className="w-full xl:w-[55%]">
+                      <p className={`text-sm leading-relaxed font-medium transition-colors duration-500 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                        {feature.desc}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -242,7 +270,12 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
 }
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-export default function ProjectContent() {
+interface ProjectContentProps {
+  cinematicShell?: boolean
+  skipIntro?: boolean
+}
+
+export default function ProjectContent({ cinematicShell = false, skipIntro = false }: ProjectContentProps) {
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -265,33 +298,42 @@ export default function ProjectContent() {
   ]
 
   return (
-    <div id="project" className="relative w-full">
-      <div className="sticky top-0 h-screen w-full overflow-hidden pointer-events-none z-0">
-        <LeopardBg />
-      </div>
-
-      <div className="relative z-10 w-full" style={{ marginTop: '-90vh' }}>
-        
-        {/* --- Batch 1 --- */}
-        <div className="mt-40 pt-10 mb-12 lg:pl-[320px] md:pl-[280px] px-6 pointer-events-none">
-          <TitleHeading
-            title="project labs"
-            subtitle="Standard 3-column architecture."
-            className="text-white mb-20 pb-1"
-            titleClassName="text-4xl md:text-6xl"
-            subtitleClassName="text-base md:text-lg mt-0 text-white/70"
-          />
+    <div className="relative w-full">
+      {cinematicShell && !skipIntro && (
+        <div className="absolute inset-x-0 top-0 h-[110vh] overflow-hidden pointer-events-none z-0">
+          <LeopardBg />
         </div>
+      )}
+
+      {!cinematicShell && (
+        <div className="sticky top-0 h-screen w-full overflow-hidden pointer-events-none z-0">
+          <LeopardBg />
+        </div>
+      )}
+
+      <div className="relative z-10 w-full" style={{ marginTop: cinematicShell ? 0 : '-90vh' }}>
+
+        {!skipIntro && (
+          <div className="pt-40 mb-12 lg:pl-[320px] md:pl-[280px] px-6 pointer-events-none">
+            <TitleHeading
+              title="project labs"
+              subtitle="Standard 3-column architecture."
+              className="text-white mb-20 pb-1"
+              titleClassName="text-4xl md:text-6xl"
+              subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+            />
+          </div>
+        )}
 
         <div className="relative w-full">
           <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
             style={{
               backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
-              backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px', 
+              backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
               mixBlendMode: isDark ? 'soft-light' : 'multiply',
               filter: isDark ? 'invert(1) brightness(1.2) contrast(1.4)' : 'none',
-              opacity: isDark ? 0.95 : 0.40,               
-              imageRendering: 'crisp-edges', transform: 'translateZ(0)', 
+              opacity: isDark ? 0.95 : 0.40,
+              imageRendering: 'crisp-edges', transform: 'translateZ(0)',
             }}
           />
           <ExtraCanvas data={projectsBatch1} cols={3} />
@@ -299,25 +341,26 @@ export default function ProjectContent() {
         </div>
 
         {/* --- Batch 2 --- */}
-        <div className="mt-40 mb-12 lg:pl-[320px] md:pl-[280px] px-6">
-           <TitleHeading
-              title="extended labs"
-              subtitle="Dual-column showcase for detailed project exploration."
-              className="text-white mb-20 pb-1"
-              titleClassName="text-4xl md:text-6xl"
-              subtitleClassName="text-base md:text-lg mt-0 text-white/70"
-            />
+        <div className="mt-20 mb-12 lg:pl-[320px] md:pl-[280px] px-6">
+          <TitleHeading
+            title="extended labs"
+            subtitle="Dual-column showcase for detailed project exploration."
+            className="text-white mb-20 pb-1"
+            titleClassName="text-4xl md:text-6xl"
+            subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+          />
         </div>
 
         <div className="relative w-full">
+          
           <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
             style={{
               backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
-              backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px', 
+              backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
               mixBlendMode: isDark ? 'soft-light' : 'multiply',
               filter: isDark ? 'invert(1) brightness(1.2) contrast(1.4)' : 'none',
-              opacity: isDark ? 0.95 : 0.40,               
-              imageRendering: 'crisp-edges', transform: 'translateZ(0)', 
+              opacity: isDark ? 0.95 : 0.40,
+              imageRendering: 'crisp-edges', transform: 'translateZ(0)',
             }}
           />
           <ExtraCanvas data={projectsBatch2} cols={2} />

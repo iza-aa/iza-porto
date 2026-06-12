@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import type { MotionValue } from 'framer-motion'
 
 // ─── Config (Diexport agar bisa dibaca oleh SkillsSection) ────────────────────
 export const CANVAS_H = 160   // Tinggi fix canvas
@@ -32,13 +33,26 @@ function widthNoiseStatic(nx: number): number {
 interface TornEdgeProps {
   showGlow?: boolean
   color?: string
-  clipPath?: string
+  // String = static clip; MotionValue = scroll-driven clip written straight to
+  // the DOM (no React re-render per scroll tick)
+  clipPath?: string | MotionValue<string>
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function TornEdge({ showGlow = true, color = '#fafafa', clipPath }: TornEdgeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const cssHRef = useRef(CANVAS_H)
+
+  // MotionValue clip-path: subscribe once, mutate style imperatively
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !clipPath || typeof clipPath === 'string') return
+    canvas.style.clipPath = clipPath.get()
+    const unsubscribe = clipPath.on('change', (v) => {
+      canvas.style.clipPath = v
+    })
+    return unsubscribe
+  }, [clipPath])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -144,7 +158,7 @@ export default function TornEdge({ showGlow = true, color = '#fafafa', clipPath 
         height: `${CANVAS_H}px`,
         zIndex: 10,
         pointerEvents: 'none',
-        clipPath: clipPath, 
+        clipPath: typeof clipPath === 'string' ? clipPath : undefined,
         willChange: clipPath ? 'clip-path' : 'auto'
       }}
     />
