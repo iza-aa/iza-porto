@@ -37,18 +37,9 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
   const [hasFlown, setHasFlown] = useState(false)
   const [flyDone, setFlyDone] = useState(false)
   const [time, setTime] = useState('')
-  const [isDark, setIsDark] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const navLockRef = useRef(false)  // prevent scroll override during click navigation
-
-  useEffect(() => {
-    const update = () => setIsDark(document.documentElement.classList.contains('dark'))
-    update()
-    const observer = new MutationObserver(update)
-    observer.observe(document.documentElement, { attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [])
 
   useEffect(() => {
     const normalIds = ['contact', 'achievements', 'experience', 'skills', 'project']
@@ -192,10 +183,8 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
   const spring = { type: 'spring', stiffness: 80, damping: 18, mass: 1 } as const
   const fadeTransition = { duration: 0.45, ease: 'easeOut' } as const
 
-  // ── Logika Override Warna untuk Section Project & Experience ────────────────
-  const isProject = activeSection === 'project'
-  const isExperience = activeSection === 'experience'
-  const isWhiteNav = isProject || isExperience
+  // Nav text is always white, in both light and dark mode.
+  const NAV_WHITE = 'rgba(255,255,255,0.88)'
 
   return (
     <>
@@ -223,8 +212,7 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
           style={{
             fontFamily: 'var(--font-anton)',
             display: 'block',
-            // Override warna di sini
-            color: isWhiteNav ? 'rgba(255,255,255,0.88)' : (isDark ? 'rgba(255,255,255,0.88)' : 'rgba(0,0,0,0.88)'),
+            color: NAV_WHITE,
             whiteSpace: 'nowrap',
             lineHeight: 1,
             letterSpacing: '0.01em',
@@ -265,14 +253,9 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
         {NAV_ITEMS.map((item) => {
           const isActive = activeSection === item.label
 
-          // Override warna di sini
-          const textColor = isWhiteNav
-            ? 'rgba(255,255,255,0.85)'
-            : (isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)')
-
-          const dimColor = isWhiteNav
-            ? 'rgba(255,255,255,0.35)'
-            : (isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)')
+          // Always white, both light and dark mode
+          const textColor = 'rgba(255,255,255,0.85)'
+          const dimColor = 'rgba(255,255,255,0.35)'
 
           return (
             <li
@@ -351,10 +334,8 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
       {trigger && (() => {
         const topPx = 26
 
-        // Override warna di sini
-        const dataBarColor = isWhiteNav
-          ? 'rgba(255,255,255,0.5)'
-          : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)')
+        // Always white, both light and dark mode
+        const dataBarColor = 'rgba(255,255,255,0.5)'
 
         return (
           <div

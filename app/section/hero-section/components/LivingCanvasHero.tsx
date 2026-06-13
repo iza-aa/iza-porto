@@ -50,6 +50,12 @@ const FRAGMENT = /* glsl */ `
   uniform float uImgAspect;
   varying vec2  vUv;
 
+  // ── Flame palette (ethereal silver-white) ──
+  // CORE = white-hot center of the burn line; HALO = cool silver-blue falloff.
+  // Tweak these two to recolor every flame edge in one place.
+  const vec3 FLAME_CORE = vec3(1.0, 1.0, 1.0);
+  const vec3 FLAME_HALO = vec3(0.78, 0.85, 1.0);
+
   float hash(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
     p += dot(p, p + 45.32);
@@ -112,8 +118,8 @@ const FRAGMENT = /* glsl */ `
     ash *= smoothstep(0.02, 0.12, uBurn);
     edge *= smoothstep(0.02, 0.12, uBurn);
 
-    vec3 ember = vec3(1.0, 0.43, 0.08) * edge;
-    vec3 gold = vec3(0.95, 0.69, 0.25) * edge * 0.45;
+    vec3 ember = FLAME_CORE * edge;
+    vec3 gold = FLAME_HALO * edge * 0.5;
     vec3 color = mix(heroColor, revealColor, ash);
 
     vec4 textSample = texture2D(uTextMap, vUv);
@@ -124,8 +130,8 @@ const FRAGMENT = /* glsl */ `
     color += textSample.rgb * textAlpha * 0.18;
 
     float textEdge = textSample.a * edge;
-    color += vec3(1.0, 0.38, 0.08) * textEdge * 1.15;
-    color += vec3(1.0, 0.78, 0.25) * textEdge * 0.55;
+    color += FLAME_CORE * textEdge * 1.15;
+    color += FLAME_HALO * textEdge * 0.55;
 
     color += ember + gold;
 
@@ -153,8 +159,8 @@ const FRAGMENT = /* glsl */ `
     projectAsh *= smoothstep(0.02, 0.12, uProjectBurn);
     projectEdge *= smoothstep(0.02, 0.12, uProjectBurn);
 
-    color += vec3(1.0, 0.43, 0.08) * projectEdge;
-    color += vec3(0.95, 0.69, 0.25) * projectEdge * 0.45;
+    color += FLAME_CORE * projectEdge;
+    color += FLAME_HALO * projectEdge * 0.5;
     float projectSmoke = projectEdge * fbm(vUv * 18.0 + uTime * 0.08);
     color = mix(color, vec3(0.13, 0.10, 0.08), projectSmoke * 0.22);
 

@@ -78,7 +78,10 @@ export function useStageProgress(
       }
 
       return {
-        frameIndex: Math.max(0, Math.min(LAST_FRAME, Math.floor(frame))),
+        // Fractional (not floored): the shader reads a continuous burn position,
+        // so the flame flows smoothly instead of stepping through 192 frames.
+        // Rounded to 0.1-frame so React still dedupes sub-pixel scroll jitter.
+        frameIndex: Math.round(Math.max(0, Math.min(LAST_FRAME, frame)) * 10) / 10,
         // Quantized to 1% so the ramp doesn't re-render React on every pixel
         aboutProgress: Math.round(Math.max(0, Math.min(1, aboutProgress)) * 100) / 100,
       }

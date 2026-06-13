@@ -24,10 +24,18 @@ type Project = {
 }
 
 type FeaturePair = { title: string; desc: string }[]
+type ContentBatch = {
+  heading: string
+  subtitle: string
+  projects: Project[]
+  features: FeaturePair[]
+}
 
 // Two content cards, two projects each
-const contentCards: { projects: Project[]; features: FeaturePair[] }[] = [
+const contentCards: ContentBatch[] = [
   {
+    heading: 'extended labs',
+    subtitle: 'Dual-column showcase for detailed project exploration.',
     projects: [
       {
         title: 'Dummy Project 4',
@@ -54,6 +62,8 @@ const contentCards: { projects: Project[]; features: FeaturePair[] }[] = [
     ],
   },
   {
+    heading: 'selected systems',
+    subtitle: 'Second pass through deeper builds, reusable patterns, and production polish.',
     projects: [
       {
         title: 'Dummy Project 6',
@@ -174,12 +184,20 @@ function ContentCard({
 }
 
 /** Shared section title — identical in the flow content and the burn overlay */
-function RevealHeading() {
+function RevealHeading({
+  title = 'extended labs',
+  subtitle = 'Dual-column showcase for detailed project exploration.',
+  className = '',
+}: {
+  title?: string
+  subtitle?: string
+  className?: string
+}) {
   return (
-    <div className="mb-12 px-6 pt-[11vh] md:pl-[280px] lg:pl-[320px]">
+    <div className={`mb-12 px-6 md:pl-[280px] lg:pl-[320px] ${className}`}>
       <TitleHeading
-        title="extended labs"
-        subtitle="Dual-column showcase for detailed project exploration."
+        title={title}
+        subtitle={subtitle}
         className="text-white mb-10 pb-1"
         titleClassName="text-4xl md:text-6xl"
         subtitleClassName="text-base md:text-lg mt-0 text-white/70"
@@ -209,15 +227,20 @@ export default function ProjectRevealContent() {
 
   return (
     <div className="relative w-full">
-      <RevealHeading />
       {contentCards.map((card, i) => (
-        <ContentCard
-          key={i}
-          projects={card.projects}
-          features={card.features}
-          isDark={isDark}
-          onOpen={openProjectSection}
-        />
+        <div key={i} className="relative">
+          <RevealHeading
+            title={card.heading}
+            subtitle={card.subtitle}
+            className={i === 0 ? 'pt-[42vh] md:pt-[48vh]' : 'pt-32 md:pt-44'}
+          />
+          <ContentCard
+            projects={card.projects}
+            features={card.features}
+            isDark={isDark}
+            onOpen={openProjectSection}
+          />
+        </div>
       ))}
     </div>
   )
