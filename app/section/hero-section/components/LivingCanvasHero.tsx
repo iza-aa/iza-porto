@@ -647,22 +647,30 @@ function LivingCanvasHero({
         @keyframes canvas-haze  { 0%, 100% { transform: translateX(-3%); } 50% { transform: translateX(3%); } }
       `}</style>
 
-      {/* Base painting — LCP + fallback when WebGL is unavailable.
-          Scaled to match the shader's resting zoom so the takeover is seamless. */}
+      {/* Base painting — LCP + WebGL fallback for the intro/about phases.
+          Scaled to match the shader's resting zoom so the takeover is seamless.
+          Hidden the instant the project burn begins so the shader's growing
+          transparency never reveals THIS (image 1 / Patmos) — what should show
+          through the burned area is the project backdrop (image 3) below. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- intentional LCP/fallback layer under the WebGL canvas */}
       <img
         src={PAINTING_URL}
         alt="Landscape with Saint John on Patmos — Nicolas Poussin, 1640"
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ transform: 'scale(1.07)', opacity: coverOpacity }}
+        style={{ transform: 'scale(1.07)', opacity: projectBurnProgress > 0 ? 0 : 1 }}
         draggable={false}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element -- invisible preload for the reveal painting used by the WebGL burn transition */}
+      {/* Reveal painting (image 2 / hall) — the burned-area fallback DURING the
+          project burn. Sits behind the canvas at the same z, so wherever the
+          shader turns transparent the project backdrop (z-0) shows through, and
+          the un-burned area still reads as image 2 rather than image 1. */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- WebGL fallback layer under the canvas */}
       <img
         src={REVEAL_PAINTING_URL}
         alt=""
         aria-hidden
-        className="absolute inset-0 w-full h-full object-cover opacity-0"
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ opacity: projectBurnProgress > 0 ? coverOpacity : 0 }}
         draggable={false}
       />
 

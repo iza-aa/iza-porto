@@ -62,7 +62,9 @@ export default function HeroSection() {
   }, [paintingReady, setAppLoading])
 
   const burnProgress = Math.max(0, Math.min(1, (frameIndex - 64) / 48))
-  const projectBurnProgress = Math.max(0, Math.min(1, (frameIndex - 136) / 40))
+  // Project burn finishes faster (frames 136→164) so the card content can
+  // start rising in before the flame has fully consumed the screen.
+  const projectBurnProgress = Math.max(0, Math.min(1, (frameIndex - 136) / 28))
 
   return (
     <>
@@ -83,7 +85,7 @@ export default function HeroSection() {
             contributes the first 100vh of scroll height. ── */}
         <div className="sticky top-0 h-screen overflow-hidden">
           <div className="absolute inset-0 z-0">
-            <ProjectRevealLayer progress={projectBurnProgress} />
+            <ProjectRevealLayer />
           </div>
 
           <div className="absolute inset-0 z-10 pointer-events-none">

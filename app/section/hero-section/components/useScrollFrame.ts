@@ -14,10 +14,12 @@ const PHASE_A_END_FRAME = 112
 const PHASE_B_END_FRAME = 136
 
 // Spacer heights (in vh) — shared with HeroSection's layout and NavOverlay's
-// navigation targets so the math never drifts apart
+// navigation targets so the math never drifts apart.
+// Spacer C is short so the project card rises in while the flame is still
+// finishing, instead of waiting for the burn to fully complete.
 export const SPACER_A_VH = 420
 export const SPACER_B_VH = 150
-export const SPACER_C_VH = 120
+export const SPACER_C_VH = 70
 
 export interface StageProgress {
   frameIndex: number

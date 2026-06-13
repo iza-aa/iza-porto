@@ -8,7 +8,7 @@ const FLIGHT_TRIGGER = 70
 // Stage frames where the pure-WebGL About and the project reveal own the
 // screen — used as active-section fallbacks since neither is a DOM section
 const ABOUT_FRAME_START = 108
-const PROJECT_FRAME_START = 176
+const PROJECT_FRAME_START = 150
 // Hoisted — avoids rebuilding an 80-char string per item on every render
 const LEADER_DOTS = '·'.repeat(80)
 

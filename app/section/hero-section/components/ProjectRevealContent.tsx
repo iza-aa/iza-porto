@@ -3,80 +3,98 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { ProjectCard } from '../../../components/ProjectMockups'
+import { TitleHeading } from '../../../components/TitleHeading'
 
 /**
- * The project card content that scrolls NATIVELY over the pinned reveal
- * backdrop after the project burn completes. Lives in normal document flow
- * (no inner scrollbar) — page scroll consumes it until the end, then the
- * sticky stage unpins and the page flows on.
+ * Project card content that scrolls NATIVELY over the pinned reveal backdrop
+ * after the project burn completes. Lives in normal document flow (no inner
+ * scrollbar) — page scroll consumes it until the end, then the sticky stage
+ * unpins and the page flows on.
  *
- * Mirrors the "extended labs" batch from the project section: an ExtraCanvas
- * row of mockup cards above a ConvinceLayer row of left/right feature pairs.
+ * Mirrors the "extended labs" batch: each content card is an ExtraCanvas row
+ * of two mockups above a ConvinceLayer row of two feature pairs. The title
+ * scrolls together with the cards (it is NOT on the pinned backdrop).
  */
 
-const projects = [
+type Project = {
+  title: string
+  desc: string
+  phoneBg: string
+  phoneImage: string
+}
+
+type FeaturePair = { title: string; desc: string }[]
+
+// Two content cards, two projects each
+const contentCards: { projects: Project[]; features: FeaturePair[] }[] = [
   {
-    title: 'Dummy Project 4',
-    desc: 'First dummy project for the half-width column layout.',
-    phoneBg: '/asset/project-section/projectbg/hall.jpeg',
-    phoneImage: '/asset/project-section/projectbg/uii.png',
-    mockupType: 'random' as const,
-    overrideW: 'max-w-full w-full',
-    overrideH: 'aspect-[16/13]',
+    projects: [
+      {
+        title: 'Dummy Project 4',
+        desc: 'First dummy project for the half-width column layout.',
+        phoneBg: '/asset/project-section/projectbg/hall.jpeg',
+        phoneImage: '/asset/project-section/projectbg/uii.png',
+      },
+      {
+        title: 'Dummy Project 5',
+        desc: 'Second dummy project for the half-width column layout.',
+        phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
+        phoneImage: '/asset/project-section/projectbg/izapos.png',
+      },
+    ],
+    features: [
+      [
+        { title: 'Dual-Column Layout', desc: 'Optimized for larger project previews.' },
+        { title: 'Maximized Space', desc: 'Takes 50% of the screen width for better detail.' },
+      ],
+      [
+        { title: 'Full Responsive', desc: 'Still stacks perfectly on mobile devices.' },
+        { title: 'Custom Aspect', desc: '16:9 ratio used for a cinematic feel.' },
+      ],
+    ],
   },
   {
-    title: 'Dummy Project 5',
-    desc: 'Second dummy project for the half-width column layout.',
-    phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
-    phoneImage: '/asset/project-section/projectbg/izapos.png',
-    mockupType: 'random' as const,
-    overrideW: 'max-w-full w-full',
-    overrideH: 'aspect-[16/13]',
-  },
-  {
-    title: 'Dummy Project 6',
-    desc: 'Third dummy project extending the dual-column showcase.',
-    phoneBg: '/asset/project-section/projectbg/whiteyellow.jpeg',
-    phoneImage: '/asset/project-section/projectbg/izapos.png',
-    mockupType: 'random' as const,
-    overrideW: 'max-w-full w-full',
-    overrideH: 'aspect-[16/13]',
+    projects: [
+      {
+        title: 'Dummy Project 6',
+        desc: 'Third dummy project extending the dual-column showcase.',
+        phoneBg: '/asset/project-section/projectbg/whiteyellow.jpeg',
+        phoneImage: '/asset/project-section/projectbg/izapos.png',
+      },
+      {
+        title: 'Dummy Project 7',
+        desc: 'Fourth dummy project completing the second content card.',
+        phoneBg: '/asset/project-section/projectbg/hall.jpeg',
+        phoneImage: '/asset/project-section/projectbg/uii.png',
+      },
+    ],
+    features: [
+      [
+        { title: 'Extended Showcase', desc: 'Room for a growing portfolio of work.' },
+        { title: 'Consistent Rhythm', desc: 'Same grid language across every card.' },
+      ],
+      [
+        { title: 'Modular Cards', desc: 'Each content card stands on its own.' },
+        { title: 'Scales Cleanly', desc: 'Add more cards without breaking the flow.' },
+      ],
+    ],
   },
 ]
 
-const features = [
-  [
-    { title: 'Dual-Column Layout', desc: 'Optimized for larger project previews.' },
-    { title: 'Maximized Space', desc: 'Takes 50% of the screen width for better detail.' },
-  ],
-  [
-    { title: 'Full Responsive', desc: 'Still stacks perfectly on mobile devices.' },
-    { title: 'Custom Aspect', desc: '16:9 ratio used for a cinematic feel.' },
-  ],
-  [
-    { title: 'Extended Showcase', desc: 'Room for a growing portfolio of work.' },
-    { title: 'Consistent Rhythm', desc: 'Same grid language across every card.' },
-  ],
-]
-
-export default function ProjectRevealContent() {
-  const [isDark, setIsDark] = useState(false)
-
-  useEffect(() => {
-    const update = () => setIsDark(document.documentElement.classList.contains('dark'))
-    update()
-    const observer = new MutationObserver(update)
-    observer.observe(document.documentElement, { attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [])
-
-  const openProjectSection = () => {
-    document.getElementById('project')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
+function ContentCard({
+  projects,
+  features,
+  isDark,
+  onOpen,
+}: {
+  projects: Project[]
+  features: FeaturePair[]
+  isDark: boolean
+  onOpen: () => void
+}) {
   return (
     <div className="relative w-full">
-      {/* ── ExtraCanvas equivalent: mockup cards row ── */}
+      {/* ── ExtraCanvas equivalent: two mockup cards ── */}
       <div className="relative w-full overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] ml-60" />
         <div
@@ -96,15 +114,15 @@ export default function ProjectRevealContent() {
             {projects.map((project, i) => (
               <ProjectCard
                 key={i}
-                size={project.mockupType}
+                size="random"
                 src={project.phoneBg}
                 alt={`${project.title} background`}
                 title={project.title}
                 description={project.desc}
                 className="group"
-                overrideW={project.overrideW}
-                overrideH={project.overrideH}
-                onClick={openProjectSection}
+                overrideW="max-w-full w-full"
+                overrideH="aspect-[16/13]"
+                onClick={onOpen}
               >
                 <Image
                   src={project.phoneImage}
@@ -119,7 +137,7 @@ export default function ProjectRevealContent() {
         </div>
       </div>
 
-      {/* ── ConvinceLayer equivalent: feature pairs row ── */}
+      {/* ── ConvinceLayer equivalent: two feature pairs ── */}
       <div className="relative w-full overflow-hidden">
         <div
           className="absolute inset-0 ml-60 transition-colors duration-500"
@@ -151,6 +169,47 @@ export default function ProjectRevealContent() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+export default function ProjectRevealContent() {
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const update = () => setIsDark(document.documentElement.classList.contains('dark'))
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(document.documentElement, { attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+
+  const openProjectSection = () => {
+    document.getElementById('project')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <div className="relative w-full">
+      {/* Title scrolls together with the cards (not on the pinned backdrop) */}
+      <div className="mb-12 px-6 pt-[6vh] md:pl-[280px] lg:pl-[320px]">
+        <TitleHeading
+          title="extended labs"
+          subtitle="Dual-column showcase for detailed project exploration."
+          className="text-white mb-10 pb-1"
+          titleClassName="text-4xl md:text-6xl"
+          subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+        />
+      </div>
+
+      {contentCards.map((card, i) => (
+        <ContentCard
+          key={i}
+          projects={card.projects}
+          features={card.features}
+          isDark={isDark}
+          onOpen={openProjectSection}
+        />
+      ))}
     </div>
   )
 }
