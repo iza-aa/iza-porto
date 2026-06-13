@@ -25,24 +25,29 @@ export default function AboutContent({ contentProgress = 1, showBackground = tru
       id="about"
       className="relative min-h-[100dvh] w-full overflow-hidden px-5 py-24 md:py-28 md:pl-[280px] md:pr-12 lg:pl-[320px] lg:pr-20"
     >
+      {/* Background package — skipped entirely when the WebGL canvas behind
+          this section is the backdrop (showBackground=false), so the living
+          painting stays visible around the card */}
       {showBackground && (
-        <Image
-          src="/asset/project-section/projectbg/hall.jpeg"
-          alt=""
-          fill
-          sizes="100vw"
-          className="absolute inset-0 -z-30 object-cover"
-          style={{ opacity: easedProgress > 0 ? 1 : 0 }}
-          priority
-        />
+        <>
+          <Image
+            src="/asset/project-section/projectbg/hall.jpeg"
+            alt=""
+            fill
+            sizes="100vw"
+            className="absolute inset-0 -z-30 object-cover"
+            style={{ opacity: easedProgress > 0 ? 1 : 0 }}
+            priority
+          />
+          <div className="absolute inset-0 -z-20 bg-[#080604]/68" />
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay"
+            style={{ backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")', backgroundSize: '520px' }}
+          />
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_72%_35%,rgba(212,168,78,0.16),transparent_42%),linear-gradient(90deg,rgba(0,0,0,0.34),transparent_42%,rgba(0,0,0,0.38))]" />
+        </>
       )}
-      <div className="absolute inset-0 -z-20 bg-[#080604]/68" />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay"
-        style={{ backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")', backgroundSize: '520px' }}
-      />
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_72%_35%,rgba(212,168,78,0.16),transparent_42%),linear-gradient(90deg,rgba(0,0,0,0.34),transparent_42%,rgba(0,0,0,0.38))]" />
 
       <div className="mx-auto grid min-h-[calc(100dvh-12rem)] w-full max-w-7xl grid-cols-1 content-center gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
         <motion.div

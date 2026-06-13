@@ -132,26 +132,6 @@ const projectsBatch1 = [
   },
 ]
 
-const projectsBatch2 = [
-  {
-    title: 'Dummy Project 4',
-    desc: 'First dummy project for the half-width column layout.',
-    phoneBg: '/asset/project-section/projectbg/hall.jpeg',
-    phoneImage: '/asset/project-section/projectbg/uii.png',
-    mockupType: 'random' as const,
-    overrideW: 'max-w-full w-full',
-    overrideH: 'aspect-[16/13]'
-  },
-  {
-    title: 'Dummy Project 5',
-    desc: 'Second dummy project for the half-width column layout.',
-    phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
-    phoneImage: '/asset/project-section/projectbg/izapos.png',
-    mockupType: 'random' as const,
-    overrideW: 'max-w-full w-full',
-    overrideH: 'aspect-[16/13]'
-  },
-]
 
 // ─── KOMPONEN EXTRA CANVAS ────────────────────────────────────────────────────
 function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
@@ -273,9 +253,14 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
 interface ProjectContentProps {
   cinematicShell?: boolean
   skipIntro?: boolean
+  skipFirstBatch?: boolean
 }
 
-export default function ProjectContent({ cinematicShell = false, skipIntro = false }: ProjectContentProps) {
+export default function ProjectContent({
+  cinematicShell = false,
+  skipIntro = false,
+  skipFirstBatch = false,
+}: ProjectContentProps) {
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -292,10 +277,6 @@ export default function ProjectContent({ cinematicShell = false, skipIntro = fal
     [{ title: 'Global Scalability', desc: 'Use our architecture in every market.' }, { title: 'Cross-border ready', desc: 'Accept payments across different global platforms.' }]
   ]
 
-  const featuresBatch2 = [
-    [{ title: 'Dual-Column Layout', desc: 'Optimized for larger project previews.' }, { title: 'Maximized Space', desc: 'Takes 50% of the screen width for better detail.' }],
-    [{ title: 'Full Responsive', desc: 'Still stacks perfectly on mobile devices.' }, { title: 'Custom Aspect', desc: '16:9 ratio used for a cinematic feel.' }]
-  ]
 
   return (
     <div className="relative w-full">
@@ -325,47 +306,22 @@ export default function ProjectContent({ cinematicShell = false, skipIntro = fal
           </div>
         )}
 
-        <div className="relative w-full">
-          <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
-            style={{
-              backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
-              backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
-              mixBlendMode: isDark ? 'soft-light' : 'multiply',
-              filter: isDark ? 'invert(1) brightness(1.2) contrast(1.4)' : 'none',
-              opacity: isDark ? 0.95 : 0.40,
-              imageRendering: 'crisp-edges', transform: 'translateZ(0)',
-            }}
-          />
-          <ExtraCanvas data={projectsBatch1} cols={3} />
-          <ConvinceLayer isDark={isDark} data={projectsBatch1} features={featuresBatch1} cols={3} />
-        </div>
-
-        {/* --- Batch 2 --- */}
-        <div className="mt-20 mb-12 lg:pl-[320px] md:pl-[280px] px-6">
-          <TitleHeading
-            title="extended labs"
-            subtitle="Dual-column showcase for detailed project exploration."
-            className="text-white mb-20 pb-1"
-            titleClassName="text-4xl md:text-6xl"
-            subtitleClassName="text-base md:text-lg mt-0 text-white/70"
-          />
-        </div>
-
-        <div className="relative w-full">
-          
-          <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
-            style={{
-              backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
-              backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
-              mixBlendMode: isDark ? 'soft-light' : 'multiply',
-              filter: isDark ? 'invert(1) brightness(1.2) contrast(1.4)' : 'none',
-              opacity: isDark ? 0.95 : 0.40,
-              imageRendering: 'crisp-edges', transform: 'translateZ(0)',
-            }}
-          />
-          <ExtraCanvas data={projectsBatch2} cols={2} />
-          <ConvinceLayer isDark={isDark} data={projectsBatch2} features={featuresBatch2} cols={2} />
-        </div>
+        {!skipFirstBatch && (
+          <div className="relative w-full">
+            <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
+              style={{
+                backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
+                backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
+                mixBlendMode: isDark ? 'soft-light' : 'multiply',
+                filter: isDark ? 'invert(1) brightness(1.2) contrast(1.4)' : 'none',
+                opacity: isDark ? 0.95 : 0.40,
+                imageRendering: 'crisp-edges', transform: 'translateZ(0)',
+              }}
+            />
+            <ExtraCanvas data={projectsBatch1} cols={3} />
+            <ConvinceLayer isDark={isDark} data={projectsBatch1} features={featuresBatch1} cols={3} />
+          </div>
+        )}
 
         {/* Space extra untuk memperlihatkan LeopardBg tanpa overlay paper */}
         <div className="w-full h-[20vh] pointer-events-none" />

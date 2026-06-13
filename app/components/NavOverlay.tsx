@@ -2,8 +2,13 @@
 
 import { useState, useEffect, useRef, RefObject } from 'react'
 import { motion } from 'framer-motion'
+import { SPACER_A_VH } from '../section/hero-section/components/useScrollFrame'
 
 const FLIGHT_TRIGGER = 70
+// Stage frames where the pure-WebGL About and the project reveal own the
+// screen — used as active-section fallbacks since neither is a DOM section
+const ABOUT_FRAME_START = 108
+const PROJECT_FRAME_START = 176
 // Hoisted — avoids rebuilding an 80-char string per item on every render
 const LEADER_DOTS = '·'.repeat(80)
 
@@ -24,6 +29,9 @@ interface Props {
 }
 
 export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
+  // getActive lives in a mount-once effect — read the live frame via ref
+  const frameIndexRef = useRef(frameIndex)
+  frameIndexRef.current = frameIndex
   const [vw, setVw] = useState(1440)
   const [vh, setVh] = useState(900)
   const [hasFlown, setHasFlown] = useState(false)
@@ -47,7 +55,6 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
 
     const getActive = () => {
       if (navLockRef.current) return   // locked during click navigation
-      const scrollY = window.scrollY
       const mid = window.innerHeight * 0.5
 
       // Normal sections — iterate bottom-to-top, first one whose top <= mid wins
@@ -61,17 +68,16 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
         }
       }
 
-      // About — inside hero sticky container, active from 60% scroll onward
-      // No upper bound: normal sections above are checked first, so if #project
-      // is already past mid it returns before reaching here
-      const heroEl = heroRef.current
-      if (heroEl) {
-        const heroTotalScroll = heroEl.offsetHeight - window.innerHeight
-        const progress = scrollY / heroTotalScroll
-        if (progress >= 0.6) {
-          setActiveSection('about')
-          return
-        }
+      // About & project-reveal live inside the WebGL stage (no DOM sections) —
+      // resolve them from the stage frame timeline
+      const frame = frameIndexRef.current
+      if (frame >= PROJECT_FRAME_START) {
+        setActiveSection('project')
+        return
+      }
+      if (frame >= ABOUT_FRAME_START) {
+        setActiveSection('about')
+        return
       }
 
       setActiveSection('home')
@@ -94,7 +100,7 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
       window.removeEventListener('scroll', onScroll)
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
-  }, [heroRef])
+  }, [])
 
   useEffect(() => {
     const tick = () => setTime(
@@ -136,10 +142,12 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
       setActiveSection('home')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (label === 'about') {
+      // About is a WebGL stage phase, not a DOM section — scroll to the
+      // middle of its reading hold (just past spacer A + the ramp)
       setActiveSection('about')
       const hero = heroRef.current
       if (hero) {
-        const target = hero.offsetTop + hero.offsetHeight - window.innerHeight
+        const target = hero.offsetTop + ((SPACER_A_VH / 100) + 0.6) * window.innerHeight
         window.scrollTo({ top: target, behavior: 'smooth' })
       }
     } else {

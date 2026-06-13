@@ -24,9 +24,7 @@ import * as THREE from 'three'
 
 const PAINTING_URL = '/asset/hero-section/patmos.jpg'
 const REVEAL_PAINTING_URL = '/asset/project-section/projectbg/hall.jpeg'
-const PROJECT_PAINTING_URL = '/asset/project-section/projectbg/leopardbg.jpeg'
 const IMG_ASPECT = 1920 / 1421
-const PROJECT_IMG_ASPECT = 1408 / 768
 const TEXT_TEXTURE_W = 2400
 
 interface LivingCanvasHeroProps {
@@ -40,7 +38,6 @@ interface LivingCanvasHeroProps {
 const FRAGMENT = /* glsl */ `
   uniform sampler2D uMap;
   uniform sampler2D uRevealMap;
-  uniform sampler2D uProjectMap;
   uniform sampler2D uTextMap;
   uniform sampler2D uAboutMap;
   uniform float uTime;
@@ -51,7 +48,6 @@ const FRAGMENT = /* glsl */ `
   uniform float uAboutLayer;  // 0..1 controlled canvas version of About content
   uniform float uPlaneAspect;
   uniform float uImgAspect;
-  uniform float uProjectImgAspect;
   varying vec2  vUv;
 
   float hash(vec2 p) {
@@ -105,12 +101,6 @@ const FRAGMENT = /* glsl */ `
     vec2 sampleUv = uv + parallax;
     vec3 heroColor = texture2D(uMap, sampleUv).rgb;
     vec3 revealColor = texture2D(uRevealMap, sampleUv).rgb;
-    vec2 projectRatio = vec2(
-      min(uPlaneAspect / uProjectImgAspect, 1.0),
-      min(uProjectImgAspect / uPlaneAspect, 1.0)
-    );
-    vec2 projectUv = (vUv - 0.5) * projectRatio + 0.5;
-    vec3 projectColor = texture2D(uProjectMap, projectUv).rgb;
     vec4 aboutContent = texture2D(uAboutMap, vUv);
 
     // The burn rises from the SOFTWARE ENGINEER title area and eats upward
@@ -147,8 +137,6 @@ const FRAGMENT = /* glsl */ `
     float projectEdge = smoothstep(projectThreshold - 0.018, projectThreshold + 0.028, burnField) - smoothstep(projectThreshold + 0.03, projectThreshold + 0.105, burnField);
     projectAsh *= smoothstep(0.02, 0.12, uProjectBurn);
     projectEdge *= smoothstep(0.02, 0.12, uProjectBurn);
-    projectColor = mix(projectColor, projectColor * vec3(0.42, 0.48, 0.52), 0.22);
-    color = mix(color, projectColor, projectAsh);
     float aboutEdge = aboutContent.a * uAboutLayer * projectEdge;
     color += vec3(1.0, 0.43, 0.08) * (projectEdge + aboutEdge * 1.25);
     color += vec3(0.95, 0.69, 0.25) * (projectEdge * 0.45 + aboutEdge * 0.8);
@@ -161,7 +149,11 @@ const FRAGMENT = /* glsl */ `
     float vig = smoothstep(1.45, 0.55, length(vUv - 0.5) * 1.8);
     color *= mix(0.82, 1.0, vig);
 
-    gl_FragColor = vec4(color, 1.0);
+    float projectLayerAlpha = 1.0 - projectAsh;
+    float flameAlpha = clamp(projectEdge * 1.7 + aboutEdge * 1.2, 0.0, 1.0);
+    float alpha = max(projectLayerAlpha, flameAlpha);
+
+    gl_FragColor = vec4(color, alpha);
   }
 `
 
@@ -503,7 +495,6 @@ function PaintingPlane({
   const matRef = useRef<THREE.ShaderMaterial>(null)
   const texture = useLoader(THREE.TextureLoader, PAINTING_URL)
   const revealTexture = useLoader(THREE.TextureLoader, REVEAL_PAINTING_URL)
-  const projectTexture = useLoader(THREE.TextureLoader, PROJECT_PAINTING_URL)
   const { viewport } = useThree()
   const pointerTarget = useRef(new THREE.Vector2(0, 0))
   const textCanvas = useMemo(() => document.createElement('canvas'), [])
@@ -536,15 +527,11 @@ function PaintingPlane({
     revealTexture.colorSpace = THREE.NoColorSpace
     revealTexture.wrapS = revealTexture.wrapT = THREE.ClampToEdgeWrapping
     revealTexture.anisotropy = 4
-    projectTexture.colorSpace = THREE.NoColorSpace
-    projectTexture.wrapS = projectTexture.wrapT = THREE.ClampToEdgeWrapping
-    projectTexture.anisotropy = 4
-  }, [texture, revealTexture, projectTexture])
+  }, [texture, revealTexture])
 
   const uniforms = useMemo(() => ({
     uMap: { value: texture },
     uRevealMap: { value: revealTexture },
-    uProjectMap: { value: projectTexture },
     uTextMap: { value: textTexture },
     uAboutMap: { value: aboutTexture },
     uTime: { value: 0 },
@@ -555,8 +542,7 @@ function PaintingPlane({
     uAboutLayer: { value: 0 },
     uPlaneAspect: { value: 16 / 9 },
     uImgAspect: { value: IMG_ASPECT },
-    uProjectImgAspect: { value: PROJECT_IMG_ASPECT },
-  }), [texture, revealTexture, projectTexture, textTexture, aboutTexture])
+  }), [texture, revealTexture, textTexture, aboutTexture])
 
   useEffect(() => {
     const redraw = () => {
@@ -619,7 +605,14 @@ function PaintingPlane({
   return (
     <mesh scale={[viewport.width, viewport.height, 1]}>
       <planeGeometry args={[1, 1]} />
-      <shaderMaterial ref={matRef} uniforms={uniforms} vertexShader={VERTEX} fragmentShader={FRAGMENT} />
+      <shaderMaterial
+        ref={matRef}
+        uniforms={uniforms}
+        vertexShader={VERTEX}
+        fragmentShader={FRAGMENT}
+        transparent
+        depthWrite={false}
+      />
     </mesh>
   )
 }
@@ -645,9 +638,10 @@ function LivingCanvasHero({
   // Nav idles center until its flight trigger (frame 70) — keep the scrim up
   // exactly that long, then let the painting stand fully revealed.
   const navCentered = frameIndex <= 70
+  const coverOpacity = 1 - Math.max(0, Math.min(1, projectBurnProgress))
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#1f180f]">
+    <div className="relative w-full h-full overflow-hidden">
       <style>{`
         @keyframes canvas-shaft { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.7; } }
         @keyframes canvas-haze  { 0%, 100% { transform: translateX(-3%); } 50% { transform: translateX(3%); } }
@@ -660,9 +654,10 @@ function LivingCanvasHero({
         src={PAINTING_URL}
         alt="Landscape with Saint John on Patmos — Nicolas Poussin, 1640"
         className="absolute inset-0 w-full h-full object-cover"
-        style={{ transform: 'scale(1.07)' }}
+        style={{ transform: 'scale(1.07)', opacity: coverOpacity }}
         draggable={false}
       />
+      {/* eslint-disable-next-line @next/next/no-img-element -- invisible preload for the reveal painting used by the WebGL burn transition */}
       <img
         src={REVEAL_PAINTING_URL}
         alt=""
@@ -677,7 +672,7 @@ function LivingCanvasHero({
         dpr={[1, 2]}
         frameloop={active ? 'always' : 'never'}
         camera={{ fov: 45, position: [0, 0, 2] }}
-        gl={{ antialias: false, powerPreference: 'high-performance' }}
+        gl={{ antialias: false, alpha: true, premultipliedAlpha: false, powerPreference: 'high-performance' }}
       >
         <Suspense fallback={null}>
           <PaintingPlane
@@ -697,6 +692,7 @@ function LivingCanvasHero({
           background:
             'linear-gradient(118deg, rgba(255,232,170,0.55) 0%, rgba(255,222,150,0.18) 28%, transparent 55%)',
           animation: 'canvas-shaft 11s ease-in-out infinite',
+          opacity: coverOpacity,
         }}
       />
 
@@ -708,11 +704,16 @@ function LivingCanvasHero({
           background: 'linear-gradient(to top, rgba(238,226,200,0.65), transparent 75%)',
           filter: 'blur(8px)',
           animation: 'canvas-haze 26s ease-in-out infinite',
+          opacity: coverOpacity * 0.35,
         }}
       />
 
       {/* Dusk dimming in dark mode — museum after hours */}
-      <div aria-hidden className="absolute inset-0 pointer-events-none hidden dark:block bg-[#140c05]/45 mix-blend-multiply" />
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none hidden dark:block bg-[#140c05]/45 mix-blend-multiply"
+        style={{ opacity: coverOpacity }}
+      />
 
       {/* Legibility scrim behind the centered nav — fades once the nav flies */}
       <div
@@ -720,7 +721,7 @@ function LivingCanvasHero({
         className="absolute inset-0 pointer-events-none transition-opacity duration-700"
         style={{
           background: 'radial-gradient(ellipse 46% 38% at 50% 44%, rgba(16,10,4,0.34), transparent 75%)',
-          opacity: navCentered ? 1 : 0,
+          opacity: navCentered ? coverOpacity : 0,
         }}
       />
 
@@ -729,20 +730,26 @@ function LivingCanvasHero({
 
 
       {/* Tiny museum label — quiet attribution, bottom right */}
-      <p className="absolute bottom-6 right-7 md:bottom-8 md:right-10 font-inknut-antiqua text-[9px] md:text-[10px] tracking-[0.22em] uppercase text-[#f0e6cf]/55 pointer-events-none select-none">
+      <p
+        className="absolute bottom-6 right-7 md:bottom-8 md:right-10 font-inknut-antiqua text-[9px] md:text-[10px] tracking-[0.22em] uppercase text-[#f0e6cf]/55 pointer-events-none select-none"
+        style={{ opacity: coverOpacity }}
+      >
         After Nicolas Poussin · MDCXL
       </p>
 
       {/* Canvas grain + vignette — same material language as every section */}
       <div
         aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-[0.06] mix-blend-overlay"
-        style={{ backgroundImage: 'url("/asset/noise.png")', backgroundRepeat: 'repeat' }}
+        className="absolute inset-0 pointer-events-none mix-blend-overlay"
+        style={{ backgroundImage: 'url("/asset/noise.png")', backgroundRepeat: 'repeat', opacity: coverOpacity * 0.06 }}
       />
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center, transparent 58%, rgba(15,9,3,0.42) 100%)' }}
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 58%, rgba(15,9,3,0.42) 100%)',
+          opacity: coverOpacity,
+        }}
       />
     </div>
   )

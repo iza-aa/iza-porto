@@ -11,7 +11,7 @@ export default function Home() {
     <main className="bg-[var(--background)] transition-colors duration-350">
       <HeroSection />
       <VirtualSection id="project">
-        <ProjectContent cinematicShell skipIntro />
+        <ProjectContent cinematicShell skipIntro skipFirstBatch />
       </VirtualSection>
       <VirtualSection id="skills">
         <SkillsSection isVisible={true} />

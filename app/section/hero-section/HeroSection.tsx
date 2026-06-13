@@ -5,7 +5,9 @@ import { motion } from 'framer-motion'
 import LoadingScreen from '../../components/LoadingScreen'
 import LivingCanvasHero from './components/LivingCanvasHero'
 import NavOverlay from '../../components/NavOverlay'
-import { useScrollFrame } from './components/useScrollFrame'
+import ProjectRevealLayer from './components/ProjectRevealLayer'
+import ProjectRevealContent from './components/ProjectRevealContent'
+import { useStageProgress, SPACER_A_VH, SPACER_B_VH, SPACER_C_VH } from './components/useScrollFrame'
 import { useAppLoading } from '../../context/LoadingContext'
 
 const MIN_LOADING_MS = 1200
@@ -13,7 +15,8 @@ const TOTAL_FRAMES = 192
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const frameIndex = useScrollFrame(sectionRef)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const { frameIndex, aboutProgress } = useStageProgress(sectionRef, contentRef)
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
@@ -60,7 +63,6 @@ export default function HeroSection() {
 
   const burnProgress = Math.max(0, Math.min(1, (frameIndex - 64) / 48))
   const projectBurnProgress = Math.max(0, Math.min(1, (frameIndex - 136) / 40))
-  const projectIntroProgress = Math.max(0, Math.min(1, (frameIndex - 176) / 10))
 
   return (
     <>
@@ -70,44 +72,46 @@ export default function HeroSection() {
       <motion.div
         ref={sectionRef}
         id="home"
-        style={{ height: '520vh', zIndex: 10, position: 'relative' }}
+        style={{ zIndex: 10, position: 'relative' }}
         className="relative"
         initial={{ opacity: 0 }}
         animate={revealContent ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
+        {/* ── Sticky canvas stage — first child, pins for the WHOLE wrapper
+            (intro travel + About traverse + project hand-off). Its slot also
+            contributes the first 100vh of scroll height. ── */}
         <div className="sticky top-0 h-screen overflow-hidden">
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 z-0">
+            <ProjectRevealLayer progress={projectBurnProgress} />
+          </div>
+
+          <div className="absolute inset-0 z-10 pointer-events-none">
             <LivingCanvasHero
               frameIndex={frameIndex}
               totalFrames={TOTAL_FRAMES}
               burnProgress={burnProgress}
               projectBurnProgress={projectBurnProgress}
-              aboutContentProgress={1}
+              aboutContentProgress={aboutProgress}
             />
           </div>
+        </div>
 
-          <div
-            className="absolute inset-0 z-20 pointer-events-none"
-            style={{
-              opacity: projectIntroProgress,
-              transform: `translateY(${(1 - projectIntroProgress) * 18}px)`,
-              willChange: 'opacity, transform',
-            }}
-          >
-            <div className="h-full w-full px-6 pt-[18vh] md:pl-[300px] lg:pl-[360px]">
-              <div className="max-w-5xl">
-                <h2 className="font-inknut-antiqua text-5xl leading-none text-[#f5f0e8] md:text-7xl lg:text-8xl">
-                  Project Labs
-                </h2>
-                <div className="mt-7 flex items-center gap-4 text-[#f5f0e8]/70">
-                  <span className="text-xs">◇</span>
-                  <span className="h-px w-16 bg-[#f5f0e8]/35" />
-                  <p className="font-pinyon-script text-3xl md:text-4xl">Standard 3-column architecture.</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* ── Phase A travel: painting intro + about burn (frames 0–112) ── */}
+        <div aria-hidden style={{ height: `${SPACER_A_VH}vh` }} />
+
+        {/* ── Phase B travel: pure-WebGL About reading hold (frames 112–136,
+            shader about layer ramps in via aboutProgress then holds) ── */}
+        <div aria-hidden style={{ height: `${SPACER_B_VH}vh` }} />
+
+        {/* ── Phase C travel: project burn (frames 136–191) — completes
+            exactly when the project card below enters the viewport ── */}
+        <div aria-hidden style={{ height: `${SPACER_C_VH}vh` }} />
+
+        {/* ── Phase D: project card content scrolls NATIVELY over the pinned
+            reveal backdrop. Any content length works — the hook measures it. ── */}
+        <div ref={contentRef} className="relative z-20">
+          <ProjectRevealContent />
         </div>
       </motion.div>
     </>
