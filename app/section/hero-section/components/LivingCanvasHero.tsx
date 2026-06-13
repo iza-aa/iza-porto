@@ -44,7 +44,7 @@ const FRAGMENT = /* glsl */ `
   uniform vec2  uPointer;     // eased cursor, -1..1
   uniform float uScroll;      // 0..1 push-in
   uniform float uBurn;        // 0..1 painting combustion reveal
-  uniform float uProjectBurn; // 0..1 about-to-project combustion reveal
+  uniform float uProjectBurn; // 0..1 About burns away to reveal Project DOM behind
   uniform float uAboutLayer;  // 0..1 controlled canvas version of About content
   uniform float uPlaneAspect;
   uniform float uImgAspect;
@@ -129,29 +129,41 @@ const FRAGMENT = /* glsl */ `
 
     color += ember + gold;
 
+    // About is revealed BY the flame: wherever burn-1 has already passed
+    // (ash), the About content is already shown. Half-burned screen = About
+    // half visible. uAboutLayer is just a soft on/off gate for the layer.
     float aboutReveal = aboutContent.a * uAboutLayer * ash;
     color = mix(color, aboutContent.rgb, aboutReveal);
-
-    float projectThreshold = 1.12 - uProjectBurn * 1.32;
-    float projectAsh = smoothstep(projectThreshold - 0.10, projectThreshold + 0.08, burnField);
-    float projectEdge = smoothstep(projectThreshold - 0.018, projectThreshold + 0.028, burnField) - smoothstep(projectThreshold + 0.03, projectThreshold + 0.105, burnField);
-    projectAsh *= smoothstep(0.02, 0.12, uProjectBurn);
-    projectEdge *= smoothstep(0.02, 0.12, uProjectBurn);
-    float aboutEdge = aboutContent.a * uAboutLayer * projectEdge;
-    color += vec3(1.0, 0.43, 0.08) * (projectEdge + aboutEdge * 1.25);
-    color += vec3(0.95, 0.69, 0.25) * (projectEdge * 0.45 + aboutEdge * 0.8);
 
     // Warm smoke veil after the flame passes.
     float smoke = edge * fbm(vUv * 18.0 + uTime * 0.08);
     color = mix(color, vec3(0.13, 0.10, 0.08), smoke * 0.22);
 
+    // Phase C: burn the About foreground itself away. The transparent holes
+    // reveal the real Project DOM already sitting behind this sticky WebGL
+    // stage, which makes the transition read as About becoming Project.
+    float projectField =
+      (1.0 - vUv.y) * 0.72 +
+      fbm(vUv * vec2(5.0, 3.4) + vec2(uTime * 0.035, -uTime * 0.018)) * 0.34;
+    float projectThreshold = 1.12 - uProjectBurn * 1.32;
+    float projectAsh = smoothstep(projectThreshold - 0.10, projectThreshold + 0.08, projectField);
+    float projectEdge =
+      smoothstep(projectThreshold - 0.018, projectThreshold + 0.028, projectField) -
+      smoothstep(projectThreshold + 0.03, projectThreshold + 0.105, projectField);
+    projectAsh *= smoothstep(0.02, 0.12, uProjectBurn);
+    projectEdge *= smoothstep(0.02, 0.12, uProjectBurn);
+
+    color += vec3(1.0, 0.43, 0.08) * projectEdge;
+    color += vec3(0.95, 0.69, 0.25) * projectEdge * 0.45;
+    float projectSmoke = projectEdge * fbm(vUv * 18.0 + uTime * 0.08);
+    color = mix(color, vec3(0.13, 0.10, 0.08), projectSmoke * 0.22);
+
     // Painterly edge falloff
     float vig = smoothstep(1.45, 0.55, length(vUv - 0.5) * 1.8);
     color *= mix(0.82, 1.0, vig);
 
-    float projectLayerAlpha = 1.0 - projectAsh;
-    float flameAlpha = clamp(projectEdge * 1.7 + aboutEdge * 1.2, 0.0, 1.0);
-    float alpha = max(projectLayerAlpha, flameAlpha);
+    float alpha = 1.0 - projectAsh;
+    alpha = max(alpha, projectEdge * 0.72);
 
     gl_FragColor = vec4(color, alpha);
   }
@@ -638,7 +650,7 @@ function LivingCanvasHero({
   // Nav idles center until its flight trigger (frame 70) — keep the scrim up
   // exactly that long, then let the painting stand fully revealed.
   const navCentered = frameIndex <= 70
-  const coverOpacity = 1 - Math.max(0, Math.min(1, projectBurnProgress))
+  const projectForegroundOpacity = 1 - projectBurnProgress
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -647,40 +659,24 @@ function LivingCanvasHero({
         @keyframes canvas-haze  { 0%, 100% { transform: translateX(-3%); } 50% { transform: translateX(3%); } }
       `}</style>
 
-      {/* Base painting — LCP + WebGL fallback for the intro/about phases.
-          Scaled to match the shader's resting zoom so the takeover is seamless.
-          Hidden the instant the project burn begins so the shader's growing
-          transparency never reveals THIS (image 1 / Patmos) — what should show
-          through the burned area is the project backdrop (image 3) below. */}
+      {/* Base painting — LCP + WebGL fallback for the intro/about phases. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- intentional LCP/fallback layer under the WebGL canvas */}
       <img
         src={PAINTING_URL}
         alt="Landscape with Saint John on Patmos — Nicolas Poussin, 1640"
-        className="absolute inset-0 w-full h-full object-cover"
+        className="pointer-events-none absolute inset-0 w-full h-full object-cover"
         style={{ transform: 'scale(1.07)', opacity: projectBurnProgress > 0 ? 0 : 1 }}
-        draggable={false}
-      />
-      {/* Reveal painting (image 2 / hall) — the burned-area fallback DURING the
-          project burn. Sits behind the canvas at the same z, so wherever the
-          shader turns transparent the project backdrop (z-0) shows through, and
-          the un-burned area still reads as image 2 rather than image 1. */}
-      {/* eslint-disable-next-line @next/next/no-img-element -- WebGL fallback layer under the canvas */}
-      <img
-        src={REVEAL_PAINTING_URL}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: projectBurnProgress > 0 ? coverOpacity : 0 }}
         draggable={false}
       />
 
       {/* WebGL living layer */}
       <Canvas
-        className="absolute inset-0"
+        className="pointer-events-none absolute inset-0"
+        style={{ pointerEvents: 'none' }}
         dpr={[1, 2]}
         frameloop={active ? 'always' : 'never'}
         camera={{ fov: 45, position: [0, 0, 2] }}
-        gl={{ antialias: false, alpha: true, premultipliedAlpha: false, powerPreference: 'high-performance' }}
+        gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
       >
         <Suspense fallback={null}>
           <PaintingPlane
@@ -700,19 +696,19 @@ function LivingCanvasHero({
           background:
             'linear-gradient(118deg, rgba(255,232,170,0.55) 0%, rgba(255,222,150,0.18) 28%, transparent 55%)',
           animation: 'canvas-shaft 11s ease-in-out infinite',
-          opacity: coverOpacity,
+          opacity: projectForegroundOpacity,
         }}
       />
 
       {/* Thin ground haze drifting at the painting's foot */}
       <div
         aria-hidden
-        className="absolute bottom-[-4%] left-[-8%] right-[-8%] h-[24%] pointer-events-none opacity-35"
+        className="absolute bottom-[-4%] left-[-8%] right-[-8%] h-[24%] pointer-events-none"
         style={{
           background: 'linear-gradient(to top, rgba(238,226,200,0.65), transparent 75%)',
           filter: 'blur(8px)',
           animation: 'canvas-haze 26s ease-in-out infinite',
-          opacity: coverOpacity * 0.35,
+          opacity: 0.35 * projectForegroundOpacity,
         }}
       />
 
@@ -720,7 +716,7 @@ function LivingCanvasHero({
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none hidden dark:block bg-[#140c05]/45 mix-blend-multiply"
-        style={{ opacity: coverOpacity }}
+        style={{ opacity: projectForegroundOpacity }}
       />
 
       {/* Legibility scrim behind the centered nav — fades once the nav flies */}
@@ -729,18 +725,14 @@ function LivingCanvasHero({
         className="absolute inset-0 pointer-events-none transition-opacity duration-700"
         style={{
           background: 'radial-gradient(ellipse 46% 38% at 50% 44%, rgba(16,10,4,0.34), transparent 75%)',
-          opacity: navCentered ? coverOpacity : 0,
+          opacity: navCentered ? projectForegroundOpacity : 0,
         }}
       />
-
-      {/* Museum gold frame at the viewport edge — same language as the cards below */}
-
-
 
       {/* Tiny museum label — quiet attribution, bottom right */}
       <p
         className="absolute bottom-6 right-7 md:bottom-8 md:right-10 font-inknut-antiqua text-[9px] md:text-[10px] tracking-[0.22em] uppercase text-[#f0e6cf]/55 pointer-events-none select-none"
-        style={{ opacity: coverOpacity }}
+        style={{ opacity: projectForegroundOpacity }}
       >
         After Nicolas Poussin · MDCXL
       </p>
@@ -749,14 +741,18 @@ function LivingCanvasHero({
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none mix-blend-overlay"
-        style={{ backgroundImage: 'url("/asset/noise.png")', backgroundRepeat: 'repeat', opacity: coverOpacity * 0.06 }}
+        style={{
+          backgroundImage: 'url("/asset/noise.png")',
+          backgroundRepeat: 'repeat',
+          opacity: 0.06 * projectForegroundOpacity,
+        }}
       />
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background: 'radial-gradient(ellipse at center, transparent 58%, rgba(15,9,3,0.42) 100%)',
-          opacity: coverOpacity,
+          opacity: projectForegroundOpacity,
         }}
       />
     </div>

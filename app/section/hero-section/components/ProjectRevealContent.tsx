@@ -173,9 +173,23 @@ function ContentCard({
   )
 }
 
-export default function ProjectRevealContent() {
-  const [isDark, setIsDark] = useState(false)
+/** Shared section title — identical in the flow content and the burn overlay */
+function RevealHeading() {
+  return (
+    <div className="mb-12 px-6 pt-[11vh] md:pl-[280px] lg:pl-[320px]">
+      <TitleHeading
+        title="extended labs"
+        subtitle="Dual-column showcase for detailed project exploration."
+        className="text-white mb-10 pb-1"
+        titleClassName="text-4xl md:text-6xl"
+        subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+      />
+    </div>
+  )
+}
 
+function useIsDark() {
+  const [isDark, setIsDark] = useState(false)
   useEffect(() => {
     const update = () => setIsDark(document.documentElement.classList.contains('dark'))
     update()
@@ -183,6 +197,11 @@ export default function ProjectRevealContent() {
     observer.observe(document.documentElement, { attributeFilter: ['class'] })
     return () => observer.disconnect()
   }, [])
+  return isDark
+}
+
+export default function ProjectRevealContent() {
+  const isDark = useIsDark()
 
   const openProjectSection = () => {
     document.getElementById('project')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -190,17 +209,7 @@ export default function ProjectRevealContent() {
 
   return (
     <div className="relative w-full">
-      {/* Title scrolls together with the cards (not on the pinned backdrop) */}
-      <div className="mb-12 px-6 pt-[6vh] md:pl-[280px] lg:pl-[320px]">
-        <TitleHeading
-          title="extended labs"
-          subtitle="Dual-column showcase for detailed project exploration."
-          className="text-white mb-10 pb-1"
-          titleClassName="text-4xl md:text-6xl"
-          subtitleClassName="text-base md:text-lg mt-0 text-white/70"
-        />
-      </div>
-
+      <RevealHeading />
       {contentCards.map((card, i) => (
         <ContentCard
           key={i}

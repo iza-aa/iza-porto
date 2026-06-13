@@ -19,7 +19,7 @@ const PHASE_B_END_FRAME = 136
 // finishing, instead of waiting for the burn to fully complete.
 export const SPACER_A_VH = 420
 export const SPACER_B_VH = 150
-export const SPACER_C_VH = 70
+export const SPACER_C_VH = 40
 
 export interface StageProgress {
   frameIndex: number
@@ -50,26 +50,23 @@ export function useStageProgress(
 
       const phaseAEnd = (SPACER_A_VH / 100) * vh
       const phaseBEnd = phaseAEnd + (SPACER_B_VH / 100) * vh
-      // Project burn completes exactly when the project card enters the
-      // viewport bottom (measured; falls back to spacer C height)
-      const content = contentRef.current
-      const contentEnter = content
-        ? content.offsetTop - vh
-        : phaseBEnd + (SPACER_C_VH / 100) * vh
-      const phaseCEnd = Math.max(phaseBEnd + 1, contentEnter)
+      // Phase C is the explicit WebGL burn handoff: the About foreground burns
+      // transparent while the Project DOM is already sitting behind it.
+      const phaseCEnd = phaseBEnd + (SPACER_C_VH / 100) * vh
 
       let frame: number
       let aboutProgress: number
 
       if (yRel <= phaseAEnd) {
         frame = (Math.max(0, yRel) / phaseAEnd) * PHASE_A_END_FRAME
-        aboutProgress = 0
+        // About layer is ON during burn-1 so the content is revealed BY the
+        // flame as it rises — half-burned = About half visible. The shader
+        // gates the actual reveal on `ash` (the burn line), not on this value.
+        aboutProgress = 1
       } else if (yRel <= phaseBEnd) {
         const p = (yRel - phaseAEnd) / (phaseBEnd - phaseAEnd)
         frame = PHASE_A_END_FRAME + p * (PHASE_B_END_FRAME - PHASE_A_END_FRAME)
-        // Ramp the WebGL about layer in over the first 35% of the hold,
-        // then keep it fully present for reading
-        aboutProgress = Math.min(1, p / 0.35)
+        aboutProgress = 1
       } else if (yRel <= phaseCEnd) {
         const p = (yRel - phaseBEnd) / (phaseCEnd - phaseBEnd)
         frame = PHASE_B_END_FRAME + p * (LAST_FRAME - PHASE_B_END_FRAME)

@@ -5,8 +5,8 @@ import { motion } from 'framer-motion'
 import LoadingScreen from '../../components/LoadingScreen'
 import LivingCanvasHero from './components/LivingCanvasHero'
 import NavOverlay from '../../components/NavOverlay'
-import ProjectRevealLayer from './components/ProjectRevealLayer'
 import ProjectRevealContent from './components/ProjectRevealContent'
+import BurnEdgeMask from './components/BurnRevealMask'
 import { useStageProgress, SPACER_A_VH, SPACER_B_VH, SPACER_C_VH } from './components/useScrollFrame'
 import { useAppLoading } from '../../context/LoadingContext'
 
@@ -62,9 +62,7 @@ export default function HeroSection() {
   }, [paintingReady, setAppLoading])
 
   const burnProgress = Math.max(0, Math.min(1, (frameIndex - 64) / 48))
-  // Project burn finishes faster (frames 136→164) so the card content can
-  // start rising in before the flame has fully consumed the screen.
-  const projectBurnProgress = Math.max(0, Math.min(1, (frameIndex - 136) / 28))
+  const projectEdgeBurnProgress = Math.max(0, Math.min(1, (frameIndex - 136) / 55))
 
   return (
     <>
@@ -80,20 +78,15 @@ export default function HeroSection() {
         animate={revealContent ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
-        {/* ── Sticky canvas stage — first child, pins for the WHOLE wrapper
-            (intro travel + About traverse + project hand-off). Its slot also
-            contributes the first 100vh of scroll height. ── */}
-        <div className="sticky top-0 h-screen overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            <ProjectRevealLayer />
-          </div>
-
-          <div className="absolute inset-0 z-10 pointer-events-none">
+        {/* ── Sticky canvas stage — hero + about live entirely in WebGL.
+            Pins through phases A & B; the project curtain rises over it. ── */}
+        <div className="sticky top-0 h-screen overflow-hidden z-20 pointer-events-none">
+          <div className="absolute inset-0 pointer-events-none">
             <LivingCanvasHero
               frameIndex={frameIndex}
               totalFrames={TOTAL_FRAMES}
               burnProgress={burnProgress}
-              projectBurnProgress={projectBurnProgress}
+              projectBurnProgress={projectEdgeBurnProgress}
               aboutContentProgress={aboutProgress}
             />
           </div>
@@ -102,18 +95,27 @@ export default function HeroSection() {
         {/* ── Phase A travel: painting intro + about burn (frames 0–112) ── */}
         <div aria-hidden style={{ height: `${SPACER_A_VH}vh` }} />
 
-        {/* ── Phase B travel: pure-WebGL About reading hold (frames 112–136,
-            shader about layer ramps in via aboutProgress then holds) ── */}
+        {/* ── Phase B travel: pure-WebGL About reading hold (frames 112–136) ── */}
         <div aria-hidden style={{ height: `${SPACER_B_VH}vh` }} />
 
-        {/* ── Phase C travel: project burn (frames 136–191) — completes
-            exactly when the project card below enters the viewport ── */}
+        {/* ── Phase C travel: the project curtain rises over the about scene
+            (frames 136→191). The curtain DOM below is the SAME element that
+            scrolls in phase D — no overlay, no duplicate. ── */}
         <div aria-hidden style={{ height: `${SPACER_C_VH}vh` }} />
 
-        {/* ── Phase D: project card content scrolls NATIVELY over the pinned
-            reveal backdrop. Any content length works — the hook measures it. ── */}
-        <div ref={contentRef} className="relative z-20">
-          <ProjectRevealContent />
+        {/* ── Project curtain: ONE DOM panel in normal flow. It scrolls up over
+            the pinned about scene like the hero→about curtain, but its TOP EDGE
+            is torn into fire (BurnEdgeMask, shader fbm) instead of a flat line.
+            Its content scrolls natively afterwards — no overlay, no duplicate,
+            no inner scrollbar. The negative margin pulls it up so it begins
+            covering the scene while phase C scroll is still in progress. ── */}
+        <div id="project" ref={contentRef} className="relative z-10" style={{ marginTop: `-${SPACER_C_VH + 100}vh` }}>
+          <BurnEdgeMask
+            burnProgress={projectEdgeBurnProgress}
+            className="w-full bg-[url('/asset/project-section/projectbg/leopardbg.jpeg')] bg-cover bg-center"
+          >
+            <ProjectRevealContent />
+          </BurnEdgeMask>
         </div>
       </motion.div>
     </>
