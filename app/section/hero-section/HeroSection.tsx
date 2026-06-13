@@ -7,6 +7,7 @@ import LivingCanvasHero from './components/LivingCanvasHero'
 import NavOverlay from '../../components/NavOverlay'
 import ProjectRevealContent from './components/ProjectRevealContent'
 import BurnEdgeMask from './components/BurnRevealMask'
+import ProjectWebGLBackground from './components/ProjectWebGLBackground'
 import { useStageProgress, SPACER_A_VH, SPACER_B_VH, SPACER_C_VH } from './components/useScrollFrame'
 import { useAppLoading } from '../../context/LoadingContext'
 
@@ -110,12 +111,14 @@ export default function HeroSection() {
             no inner scrollbar. The negative margin pulls it up so it begins
             covering the scene while phase C scroll is still in progress. ── */}
         <div id="project" ref={contentRef} className="relative z-10" style={{ marginTop: `-${SPACER_C_VH + 100}vh` }}>
-          <BurnEdgeMask
-            burnProgress={projectEdgeBurnProgress}
-            className="w-full bg-[url('/asset/project-section/projectbg/leopardbg.jpeg')] bg-cover bg-center"
-          >
-            <ProjectRevealContent />
-          </BurnEdgeMask>
+          <div className="sticky top-0 h-screen overflow-hidden pointer-events-none">
+            <ProjectWebGLBackground />
+          </div>
+          <div className="relative z-10 -mt-[100vh]">
+            <BurnEdgeMask burnProgress={projectEdgeBurnProgress} className="w-full">
+              <ProjectRevealContent />
+            </BurnEdgeMask>
+          </div>
         </div>
       </motion.div>
     </>
