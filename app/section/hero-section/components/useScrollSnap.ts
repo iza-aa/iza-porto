@@ -1,0 +1,195 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { useLenis } from '@studio-freight/react-lenis'
+
+const TOTAL_FRAMES = 192
+const LAST_FRAME = TOTAL_FRAMES - 1
+
+// Virtual frame milestones the shader already understands:
+//  hero rest .......... frame 0
+//  about rest ......... frame 130   (burn-1 done at 112, brief settle)
+//  project released ... frame LAST  (burn-2 done)
+const ABOUT_FRAME = 130
+const PROJECT_FRAME = LAST_FRAME
+
+// One transition's playback time (ms) and easing. Longer = slower, statelier
+// burn that reads clearly instead of snapping past.
+const HERO_TO_ABOUT_MS = 4200
+const ABOUT_TO_PROJECT_MS = 2300
+const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
+
+// A downward gesture past this wheel/touch delta triggers the next transition.
+const TRIGGER_DELTA = 24
+
+export type SnapPhase = 'hero' | 'about' | 'project'
+
+export interface SnapState {
+  frameIndex: number
+  aboutProgress: number
+  phase: SnapPhase
+}
+
+/**
+ * Scroll-snap stage engine.
+ *
+ * Instead of binding the burn to scroll position, each downward gesture FIRES a
+ * fixed-duration transition that plays on its own (rAF + easing). Native page
+ * scroll is locked (Lenis stopped + wheel/touch prevented) while a transition
+ * plays, then released at the next "rest" phase:
+ *
+ *   hero  --(gesture)-->  [auto burn 1.5s]  -->  about (rest)
+ *   about --(gesture)-->  [auto burn 1.4s]  -->  project (released → native scroll)
+ *
+ * Once in `project`, the engine steps aside entirely so the long project
+ * content scrolls normally through Lenis.
+ */
+export function useScrollSnap(): SnapState {
+  const lenis = useLenis()
+  const [state, setState] = useState<SnapState>({ frameIndex: 0, aboutProgress: 1, phase: 'hero' })
+
+  // Mutable refs mirror state for use inside event handlers without re-binding
+  const phaseRef = useRef<SnapPhase>('hero')
+  const frameRef = useRef(0)
+  const animatingRef = useRef(false)
+  const lenisRef = useRef(lenis)
+  lenisRef.current = lenis
+
+  useEffect(() => {
+    const animateTo = (target: number, duration: number, onDone: () => void) => {
+      animatingRef.current = true
+      lenisRef.current?.stop()
+      const from = frameRef.current
+      const start = performance.now()
+
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / duration)
+        const eased = easeInOut(t)
+        const value = from + (target - from) * eased
+        frameRef.current = value
+        setState((s) => ({ ...s, frameIndex: Math.round(value * 10) / 10 }))
+        if (t < 1) {
+          requestAnimationFrame(tick)
+        } else {
+          frameRef.current = target
+          animatingRef.current = false
+          lenisRef.current?.start()
+          onDone()
+        }
+      }
+      requestAnimationFrame(tick)
+    }
+
+    const startHeroToAbout = () => {
+      if (animatingRef.current || phaseRef.current !== 'hero') return
+      animateTo(ABOUT_FRAME, HERO_TO_ABOUT_MS, () => {
+        phaseRef.current = 'about'
+        setState((s) => ({ ...s, phase: 'about', frameIndex: ABOUT_FRAME }))
+        // Pin the window at the very top while hero/about live in the fixed
+        // stage, so releasing to project later scrolls from a known origin.
+        lenisRef.current?.scrollTo(0, { immediate: true })
+      })
+    }
+
+    const startAboutToProject = () => {
+      if (animatingRef.current || phaseRef.current !== 'about') return
+      animateTo(PROJECT_FRAME, ABOUT_TO_PROJECT_MS, () => {
+        phaseRef.current = 'project'
+        setState((s) => ({ ...s, phase: 'project', frameIndex: PROJECT_FRAME }))
+      })
+    }
+
+    const reverseAboutToHero = () => {
+      animateTo(0, HERO_TO_ABOUT_MS, () => {
+        phaseRef.current = 'hero'
+        setState((s) => ({ ...s, phase: 'hero', frameIndex: 0 }))
+      })
+    }
+
+    // project → about: re-burn the About scene back over the project content.
+    // Only when the project page is scrolled to its very top.
+    const reverseProjectToAbout = () => {
+      if (animatingRef.current) return
+      phaseRef.current = 'about'
+      setState((s) => ({ ...s, phase: 'about' }))
+      lenisRef.current?.scrollTo(0, { immediate: true })
+      animateTo(ABOUT_FRAME, ABOUT_TO_PROJECT_MS, () => {
+        setState((s) => ({ ...s, frameIndex: ABOUT_FRAME }))
+      })
+    }
+
+    // Wheel handling: while in hero/about, the page must not scroll — every
+    // downward gesture is a transition trigger instead.
+    const onWheel = (e: WheelEvent) => {
+      const phase = phaseRef.current
+
+      if (phase === 'project') {
+        // Native scroll owns the page — except an upward gesture at the very
+        // top re-enters About.
+        if (!animatingRef.current && e.deltaY < -TRIGGER_DELTA && window.scrollY <= 2) {
+          e.preventDefault()
+          reverseProjectToAbout()
+        }
+        return
+      }
+
+      if (animatingRef.current) {
+        e.preventDefault()
+        return
+      }
+      if (e.deltaY > TRIGGER_DELTA) {
+        e.preventDefault()
+        if (phase === 'hero') startHeroToAbout()
+        else if (phase === 'about') startAboutToProject()
+      } else if (e.deltaY < -TRIGGER_DELTA) {
+        // Upward gesture in about → reverse back to hero
+        e.preventDefault()
+        if (phase === 'about') reverseAboutToHero()
+      }
+    }
+
+    // Touch: translate vertical swipe into the same triggers
+    let touchStartY = 0
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0]?.clientY ?? 0
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      const phase = phaseRef.current
+      const y = e.touches[0]?.clientY ?? 0
+      const dy = touchStartY - y
+
+      if (phase === 'project') {
+        if (!animatingRef.current && dy < -TRIGGER_DELTA && window.scrollY <= 2) {
+          e.preventDefault()
+          reverseProjectToAbout()
+        }
+        return
+      }
+
+      if (animatingRef.current) {
+        e.preventDefault()
+        return
+      }
+      if (dy > TRIGGER_DELTA) {
+        e.preventDefault()
+        if (phase === 'hero') startHeroToAbout()
+        else if (phase === 'about') startAboutToProject()
+      } else if (dy < -TRIGGER_DELTA && phase === 'about') {
+        e.preventDefault()
+        reverseAboutToHero()
+      }
+    }
+
+    window.addEventListener('wheel', onWheel, { passive: false })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+      lenisRef.current?.start()
+    }
+  }, [])
+
+  return state
+}

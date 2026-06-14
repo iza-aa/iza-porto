@@ -1,11 +1,9 @@
 'use client'
 
-import React, { useRef, useState, useEffect, useMemo } from 'react'
-import { useScroll, useTransform, motion, AnimatePresence } from 'framer-motion'
-import TornEdge, { CANVAS_H, BASE_Y, tornNoiseStatic } from '../../components/tornedge2'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { TitleHeading } from '../../components/TitleHeading'
 import LiquidGlass from '../../components/LiquidGlass'
-import TornEdgeInverted from '../../components/tornedge-inverted'
 
 
 const LOCAL_EMOJIS = [
@@ -20,11 +18,13 @@ const LOCAL_EMOJIS = [
 ];
 
 // ─── DATA SKILLS ──────────────────────────────────────────────────────────────
+type SkillTier = 'Junior' | 'Senior' | 'Expert'
+
 type SkillData = {
   id: string;
   name: string;
   category: string;
-  level: number;
+  tier: SkillTier;
   icon: string;
   description: string;
   pos: { x: number, y: number };
@@ -33,44 +33,52 @@ type SkillData = {
 };
 
 const skillsData: SkillData[] = [
-  { id: 'react', name: 'React', category: 'Frontend', level: 92, icon: '/asset/skill-section/react.svg', description: 'UI Systems & State Management', pos: { x: 15, y: 15 } },
-  { id: 'next', name: 'Next.js', category: 'Fullstack', level: 88, icon: '/asset/skill-section/nextjs.svg', description: 'SSR, SSG & API Routes', pos: { x: 40, y: 10 }, defaultBlur: true },
-  { id: 'js', name: 'JavaScript', category: 'Foundation', level: 90, icon: '/asset/skill-section/js.svg', description: 'ES6+, DOM manipulation', pos: { x: 75, y: 20 } },
-  { id: 'css', name: 'CSS3', category: 'Foundation', level: 95, icon: '/asset/skill-section/css.svg', description: 'Advanced layouts & animations', pos: { x: 10, y: 50 }, defaultBlur: true, nodeIcon: '/asset/skill-section/csshover.png' },
-  { id: 'html', name: 'HTML5', category: 'Foundation', level: 95, icon: '/asset/skill-section/HTML5.svg', description: 'Semantic structure & accessibility', pos: { x: 35, y: 40 }, nodeIcon: '/asset/skill-section/htmlhover.png' },
-  { id: 'vue', name: 'Vue.js', category: 'Frontend', level: 80, icon: '/asset/skill-section/Vue.js.svg', description: 'Reactive components', pos: { x: 60, y: 55 }, defaultBlur: true },
-  { id: 'angular', name: 'Angular', category: 'Frontend', level: 75, icon: '/asset/skill-section/Angular.svg', description: 'Enterprise applications', pos: { x: 85, y: 40 } },
-  { id: 'laravel', name: 'Laravel', category: 'Backend', level: 85, icon: '/asset/skill-section/Laravel.svg', description: 'MVC architecture & Eloquent', pos: { x: 20, y: 85 }, defaultBlur: true },
-  { id: 'php', name: 'PHP', category: 'Backend', level: 80, icon: '/asset/skill-section/php.svg', description: 'Server-side processing', pos: { x: 45, y: 75 } },
-  { id: 'docker', name: 'Docker', category: 'DevOps', level: 75, icon: '/asset/skill-section/docker.svg', description: 'Containerization & CI/CD', pos: { x: 70, y: 85 }, defaultBlur: true },
-  { id: 'swift', name: 'Swift', category: 'Mobile', level: 65, icon: '/asset/skill-section/Swift.svg', description: 'iOS native development', pos: { x: 90, y: 70 }, nodeIcon: '/asset/skill-section/swifthover.png' },
-  { id: 'python', name: 'Python', category: 'Backend/AI', level: 70, icon: '/asset/skill-section/python.svg', description: 'Data processing & scripting', pos: { x: 50, y: 30 }, defaultBlur: true },
+  { id: 'react', name: 'React', category: 'Frontend', tier: 'Expert', icon: '/asset/skill-section/react.svg', description: 'UI Systems & State Management', pos: { x: 15, y: 15 } },
+  { id: 'next', name: 'Next.js', category: 'Fullstack', tier: 'Senior', icon: '/asset/skill-section/nextjs.svg', description: 'SSR, SSG & API Routes', pos: { x: 40, y: 10 }, defaultBlur: true },
+  { id: 'js', name: 'JavaScript', category: 'Foundation', tier: 'Expert', icon: '/asset/skill-section/js.svg', description: 'ES6+, DOM manipulation', pos: { x: 75, y: 20 } },
+  { id: 'css', name: 'CSS3', category: 'Foundation', tier: 'Expert', icon: '/asset/skill-section/css.svg', description: 'Advanced layouts & animations', pos: { x: 10, y: 50 }, defaultBlur: true, nodeIcon: '/asset/skill-section/csshover.png' },
+  { id: 'html', name: 'HTML5', category: 'Foundation', tier: 'Expert', icon: '/asset/skill-section/HTML5.svg', description: 'Semantic structure & accessibility', pos: { x: 35, y: 40 }, nodeIcon: '/asset/skill-section/htmlhover.png' },
+  { id: 'vue', name: 'Vue.js', category: 'Frontend', tier: 'Senior', icon: '/asset/skill-section/Vue.js.svg', description: 'Reactive components', pos: { x: 60, y: 55 }, defaultBlur: true },
+  { id: 'angular', name: 'Angular', category: 'Frontend', tier: 'Junior', icon: '/asset/skill-section/Angular.svg', description: 'Enterprise applications', pos: { x: 85, y: 40 } },
+  { id: 'laravel', name: 'Laravel', category: 'Backend', tier: 'Senior', icon: '/asset/skill-section/Laravel.svg', description: 'MVC architecture & Eloquent', pos: { x: 20, y: 85 }, defaultBlur: true },
+  { id: 'php', name: 'PHP', category: 'Backend', tier: 'Junior', icon: '/asset/skill-section/php.svg', description: 'Server-side processing', pos: { x: 45, y: 75 } },
+  { id: 'docker', name: 'Docker', category: 'DevOps', tier: 'Junior', icon: '/asset/skill-section/docker.svg', description: 'Containerization & CI/CD', pos: { x: 70, y: 85 }, defaultBlur: true },
+  { id: 'swift', name: 'Swift', category: 'Mobile', tier: 'Junior', icon: '/asset/skill-section/Swift.svg', description: 'iOS native development', pos: { x: 90, y: 70 }, nodeIcon: '/asset/skill-section/swifthover.png' },
+  { id: 'python', name: 'Python', category: 'Backend/AI', tier: 'Junior', icon: '/asset/skill-section/python.svg', description: 'Data processing & scripting', pos: { x: 50, y: 30 }, defaultBlur: true },
 ];
+
+// Tier badge palette — Expert = bright gold, Senior = muted gold, Junior = bronze
+const TIER_STYLE: Record<SkillTier, { label: string; color: string; bg: string }> = {
+  Expert: { label: 'EXPERT', color: '#f2d98b', bg: 'rgba(201,162,39,0.22)' },
+  Senior: { label: 'SENIOR', color: '#d8c08a', bg: 'rgba(176,141,87,0.20)' },
+  Junior: { label: 'JUNIOR', color: '#b89f82', bg: 'rgba(120,100,70,0.20)' },
+}
+
+// Two-column description pairs below the network card (same shape as the
+// project ConvinceLayer feature pairs).
+const SKILL_FEATURES: { title: string; desc: string }[][] = [
+  [
+    { title: 'Frontend Craft', desc: 'React, Next.js, Vue & Angular for interfaces that stay clear under complexity.' },
+    { title: 'Strong Foundations', desc: 'Expert-level HTML, CSS & JavaScript underpinning every build.' },
+  ],
+  [
+    { title: 'Backend & Data', desc: 'Laravel, PHP and Python for reliable server-side logic and processing.' },
+    { title: 'Tooling & Delivery', desc: 'Docker and modern workflows to ship and scale with confidence.' },
+  ],
+]
 
 // ─── SUB-COMPONENTS ──────────────────────────────────────────────────────────────
 
-const CircularProgress = ({ level, isDark }: { level: number, isDark: boolean }) => {
-  const radius = 18;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (level / 100) * circumference;
-
+const TierBadge = ({ tier }: { tier: SkillTier }) => {
+  const t = TIER_STYLE[tier]
   return (
-    <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
-      <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 44 44">
-        <circle cx="22" cy="22" r={radius} stroke={isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} strokeWidth="3" fill="none" />
-        <motion.circle
-          cx="22" cy="22" r={radius}
-          stroke={isDark ? "#c7b99f" : "#8c6b45"}
-          strokeWidth="3"
-          fill="none"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-          strokeLinecap="round"
-        />
-      </svg>
-      <span className="absolute text-[10px] font-bold font-mono">{level}%</span>
+    <div
+      className="shrink-0 flex items-center justify-center rounded-sm border px-3 py-2"
+      style={{ color: t.color, backgroundColor: t.bg, borderColor: t.color + '55' }}
+    >
+      <span className="font-inknut-antiqua text-[11px] font-bold tracking-[0.22em] whitespace-nowrap">
+        {t.label}
+      </span>
     </div>
   )
 }
@@ -174,14 +182,13 @@ const TechNode = ({
                 </div>
               </LiquidGlass>
 
-              {/* Circular Progress (Outside Right) */}
+              {/* Tier badge (Outside Right) */}
               <motion.div
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
-                className="shrink-0 bg-white/5 backdrop-blur-md rounded-full p-2 border border-white/10 shadow-lg"
               >
-                <CircularProgress level={skill.level} isDark={isDark} />
+                <TierBadge tier={skill.tier} />
               </motion.div>
             </motion.div>
           )}
@@ -193,120 +200,35 @@ const TechNode = ({
 
 // ─── LAYERS ──────────────────────────────────────────────────────────────
 
-const ArtGalleryLayer = ({ isDark }: { isDark: boolean }) => {
-  const textColor = isDark ? '#d4c4a8' : '#f2eadc'
-
-  const rotations = useMemo(() => skillsData.map(() => Math.random() * 14 - 7), []);
-
-  return (
-    <div
-      className="absolute inset-0 w-full h-full transition-colors duration-300"
-      style={{
-        backgroundImage:
-          'linear-gradient(90deg, rgba(5,4,3,0.88), rgba(11,8,5,0.52) 48%, rgba(4,3,2,0.82)), url("/asset/project-section/projectbg/redcape.jpeg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-[0.08] mix-blend-overlay"
-        style={{ backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")', backgroundSize: '520px' }}
-      />
-      <div className="max-w-7xl mx-auto w-full h-full flex flex-col px-8 md:px-16 pt-24">
-        <div className="mb-12 opacity-70">
-          <h2 className="text-4xl md:text-6xl font-serif italic mb-2 tracking-wide" style={{ color: textColor }}>Gallery of Mastery</h2>
-          <p className="text-lg md:text-xl font-serif" style={{ color: textColor }}>The art of crafting digital experiences.</p>
-        </div>
-
-        <div className="flex flex-wrap gap-12 items-center justify-start mt-8">
-          {skillsData.map((skill, i) => (
-            <div
-              key={skill.id}
-              className="relative w-24 h-28 bg-[#e6dfce] dark:bg-[#1f1a14] p-2 shadow-xl border border-[#b89f82] dark:border-[#5c4738] transition-transform duration-500"
-              style={{ transform: `rotate(${rotations[i]}deg)` }}
-            >
-              <div className="w-full h-full border border-[#8c6b45]/30 bg-[#d4c4a8] dark:bg-[#2c241c] flex flex-col items-center justify-center opacity-80 shadow-inner overflow-hidden relative">
-                <div className="absolute inset-0 bg-black/5 mix-blend-multiply"></div>
-                <span className="font-serif italic text-[10px] text-[#8c6b45] px-1 text-center relative z-10 leading-tight">Art<br />Canvas</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const AwakenedLayer = ({ isDark }: { isDark: boolean }) => {
+// Network graph of skill nodes — lives inside the content card.
+const SkillNetwork = ({ isDark }: { isDark: boolean }) => {
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
 
   const hoveredData = skillsData.find(s => s.id === hoveredSkill);
   const hoveredSkillPos = hoveredData ? hoveredData.pos : null;
 
   return (
-    <div
-      className="absolute inset-0 w-full h-full pointer-events-auto overflow-hidden transition-colors duration-300"
-      style={{
-        backgroundImage:
-          'radial-gradient(ellipse at 68% 42%, rgba(175,45,58,0.18), transparent 42%), linear-gradient(90deg, rgba(8,6,4,0.88), rgba(17,10,8,0.58) 50%, rgba(7,5,3,0.9)), url("/asset/project-section/projectbg/redcape.jpeg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      <div
+    <div className="relative w-full h-full min-h-[460px] md:min-h-[560px]">
+      {/* eslint-disable-next-line @next/next/no-img-element -- decorative art positioned by percentage transforms */}
+      <img
+        src="/asset/skill-section/background.png"
+        alt=""
         aria-hidden
-        className="absolute inset-0 opacity-[0.08] mix-blend-overlay"
-        style={{ backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")', backgroundSize: '520px' }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[78%] max-w-none object-contain opacity-70 pointer-events-none z-0"
       />
-      <div className="w-full h-full flex flex-col lg:flex-row items-center pt-24 pb-16">
-        
-        {/* Left Side: Title */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center relative z-10 lg:pl-[320px] md:pl-[280px] px-6 pr-4">
-          <div className="pointer-events-none relative z-10 mb-8 lg:mb-0">
-            <TitleHeading
-              title="tech network"
-              subtitle="Worldwide connections."
-              titleClassName="tracking-tight"
-              subtitleClassName=""
-            />
-          </div>
-        </div>
 
-        {/* Right Side: Network Graph */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10 mt-12 lg:mt-0">
-          <div className="relative w-full max-w-lg lg:max-w-xl flex-1 min-h-[400px]">
-            
-            {/* 
-              BACKGROUND IMAGE UNTUK IKON
-              - Untuk mengubah posisi: ubah 'top-1/2' atau 'left-1/2' dan '-translate-y-1/2'.
-                Misal mau digeser ke atas, ganti 'top-1/2' jadi 'top-0' atau '-top-10'.
-              - Untuk memperbesar/memperkecil: ubah 'w-[120%]' (120% dari lebar container) atau 'scale-100'.
-                Misal mau lebih besar, ganti jadi 'w-[150%]' atau tambahkan 'scale-125'.
-            */}
-            {/* eslint-disable-next-line @next/next/no-img-element -- decorative art positioned by percentage transforms */}
-            <img
-              src="/asset/skill-section/background.png"
-              alt="Skills Background"
-              className="absolute top-[44%] left-[52%] -translate-x-1/2 -translate-y-1/2 w-[80%] max-w-none object-contain opacity-80 pointer-events-none z-0"
-            />
-
-            {skillsData.map(skill => (
-              <TechNode
-                key={skill.id}
-                skill={skill}
-                isHovered={hoveredSkill === skill.id}
-                isAnotherHovered={hoveredSkill !== null && hoveredSkill !== skill.id}
-                hoveredSkillPos={hoveredSkillPos}
-                onHover={() => setHoveredSkill(skill.id)}
-                onLeave={() => setHoveredSkill(null)}
-                isDark={isDark}
-              />
-            ))}
-          </div>
-        </div>
-
-      </div>
+      {skillsData.map(skill => (
+        <TechNode
+          key={skill.id}
+          skill={skill}
+          isHovered={hoveredSkill === skill.id}
+          isAnotherHovered={hoveredSkill !== null && hoveredSkill !== skill.id}
+          hoveredSkillPos={hoveredSkillPos}
+          onHover={() => setHoveredSkill(skill.id)}
+          onLeave={() => setHoveredSkill(null)}
+          isDark={isDark}
+        />
+      ))}
     </div>
   )
 }
@@ -317,8 +239,6 @@ interface SkillsSectionProps {
 }
 
 export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -329,48 +249,26 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
     return () => observer.disconnect()
   }, [])
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start 120%', 'end end']
-  })
-
-  // Semua nilai turunan scroll dihitung sebagai MotionValue dan ditulis
-  // langsung ke style elemen — komponen ini tidak pernah re-render saat scroll.
-  const clipPathMV = useTransform(scrollYProgress, (v) =>
-    `polygon(0 0, ${v * 100}% 0, ${v * 100}% 100%, 0 100%)`
-  )
-  const lineLeft = useTransform(scrollYProgress, (v) => `${Math.min(v * 100, 99.9)}%`)
-  const lineOpacity = useTransform(scrollYProgress, (v) => (v * 100 >= 100 ? 0 : 1))
-  const lineBoxShadow = useTransform(scrollYProgress, (v) =>
-    v * 100 < 99
-      ? `0 0 15px ${isDark ? 'rgba(199,185,159,0.5)' : 'rgba(140,107,69,0.5)'}`
-      : 'none'
-  )
-  const extensionHeight = useTransform(scrollYProgress, (v) =>
-    `${CANVAS_H - (BASE_Y + tornNoiseStatic(v))}px`
-  )
-
   if (!isVisible) return null
 
-  const lineColor = isDark ? '#c7b99f' : '#8c6b45';
-
   return (
-    <div ref={containerRef} className="relative w-full h-[200vh] overflow-x-clip">
-
-      {/* ─── 1. TORN EDGE 2 LAPIS ─── */}
-      <div className="absolute top-0 w-full z-20 pointer-events-none">
-        {/* Lapis Dasar (Art Gallery) */}
-        <TornEdge color="rgba(10,7,5,0.24)" showGlow={true} />
-
-        {/* Lapis Atas (Node Graph) */}
-        <TornEdge
-          color="rgba(10,7,5,0.2)"
-          showGlow={false}
-          clipPath={clipPathMV}
+    <section className="relative w-full bg-[#1b1309]">
+      {/* Opaque atmospheric backdrop so the fixed hero stage never shows
+          through — same leopard + grain language as the project section. */}
+      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative full-bleed backdrop */}
+        <img
+          src="/asset/project-section/projectbg/leopardbg.jpeg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-24 mix-blend-luminosity"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#3f3320]/82 via-[#1b1309]/88 to-[#120a04]/94" />
+        <div
+          className="absolute inset-0 opacity-[0.08] mix-blend-overlay"
+          style={{ backgroundImage: 'url("/asset/noise.png")', backgroundRepeat: 'repeat' }}
         />
       </div>
-
-      {/* ─── 2. KONTEN STICKY UTAMA ─── */}
+      <div className="relative">
       <style>{`
         @keyframes emoji-waterfall {
           0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
@@ -387,55 +285,69 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
         .emoji-fly-0 { animation: emoji-waterfall 2.5s infinite ease-in-out; }
         .emoji-fly-1 { animation: emoji-waterfall-alt 2.8s infinite ease-in-out 0.4s; }
       `}</style>
-      <div className="sticky top-0 w-full h-screen z-30">
 
-        {/* Layer 1: Art Gallery / Canvas Placeholders */}
-        <ArtGalleryLayer isDark={isDark} />
-
-        {/* Layer 2: Awakened Tech Universe */}
-        <motion.div
-          className="absolute inset-0 z-10 select-none pointer-events-none"
-          style={{ clipPath: clipPathMV, willChange: 'clip-path' }}
-        >
-          <AwakenedLayer isDark={isDark} />
-        </motion.div>
-
-        {/* ─── GARIS VERTIKAL & EKSTENSI DINAMIS ─── */}
-        {/* The line fades out when slider reaches 100% */}
-        <motion.div
-          className="absolute top-0 bottom-0 z-40 w-[2px] pointer-events-none transition-opacity duration-300"
-          style={{
-            left: lineLeft,
-            opacity: lineOpacity,
-            backgroundColor: lineColor,
-            boxShadow: lineBoxShadow,
-          }}
-        >
-          <motion.div
-            className="absolute bottom-full left-0 w-full"
-            style={{ height: extensionHeight, backgroundColor: lineColor }}
-          />
-
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-12 border-2 flex items-center justify-center rounded-sm"
-            style={{
-              backgroundColor: 'rgba(18,13,9,0.82)',
-              borderColor: lineColor,
-              boxShadow: `0 0 10px ${isDark ? 'rgba(199,185,159,0.3)' : 'rgba(140,107,69,0.3)'}`
-            }}
-          >
-            <div className="flex gap-[3px]">
-              <div className="w-[2px] h-4" style={{ backgroundColor: lineColor }}></div>
-              <div className="w-[2px] h-4" style={{ backgroundColor: lineColor }}></div>
-            </div>
-          </div>
-        </motion.div>
-
+      {/* Title — outside/above the card, identical to the project sections */}
+      <div className="mb-12 px-6 pt-[6vh] md:pl-[280px] lg:pl-[320px]">
+        <TitleHeading
+          title="skills"
+          subtitle="The capabilities behind the craft."
+          className="text-white mb-10 pb-1"
+          titleClassName="text-4xl md:text-6xl"
+          subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+        />
       </div>
 
-      {/* ─── 3. TORN EDGE BAWAH ─── */}
-      <TornEdgeInverted color="rgba(10,7,5,0.28)" />
-    </div>
+      {/* ── ExtraCanvas equivalent: solid card holding the node network ── */}
+      <div className="relative w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] ml-60" />
+        <div
+          aria-hidden
+          className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
+          style={{
+            backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
+            backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
+            mixBlendMode: isDark ? 'soft-light' : 'multiply',
+            filter: isDark ? 'invert(1) brightness(1.2) contrast(1.4)' : 'none',
+            opacity: isDark ? 0.95 : 0.40,
+            imageRendering: 'crisp-edges', transform: 'translateZ(0)',
+          }}
+        />
+        <div className="relative z-10 py-6 pr-6 lg:pl-[270px] md:py-6">
+          <SkillNetwork isDark={isDark} />
+        </div>
+      </div>
+
+      {/* ── ConvinceLayer equivalent: description pairs below the card ── */}
+      <div className="relative w-full overflow-hidden">
+        <div
+          className="absolute inset-0 ml-60 transition-colors duration-500"
+          style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
+        />
+        <div className="relative z-10 py-16 pr-6 lg:pl-[270px] md:py-16">
+          <div className="grid grid-cols-1 gap-6 justify-start md:grid-cols-2">
+            {SKILL_FEATURES.map((column, idx) => (
+              <div key={idx} className="w-full max-w-full flex flex-col gap-10 pr-4">
+                {column.map((feature, fIdx) => (
+                  <div key={fIdx} className="flex flex-col xl:flex-row gap-2 xl:gap-4 items-start pr-4">
+                    <div className="w-full xl:w-[45%]">
+                      <h4 className={`font-bold text-[15px] leading-tight transition-colors duration-500 ${isDark ? 'text-white' : 'text-black'}`}>
+                        {feature.title}
+                      </h4>
+                    </div>
+                    <div className="w-full xl:w-[55%]">
+                      <p className={`text-sm leading-relaxed font-medium transition-colors duration-500 ${isDark ? 'text-white/50' : 'text-black/50'}`}>
+                        {feature.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      </div>
+    </section>
   )
 }
 

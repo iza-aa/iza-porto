@@ -115,6 +115,7 @@ export default function ProjectWebGLBackground() {
           <BackgroundPlane />
         </Suspense>
       </Canvas>
+
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 mix-blend-overlay"

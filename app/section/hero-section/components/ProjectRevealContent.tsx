@@ -232,7 +232,7 @@ export default function ProjectRevealContent() {
           <RevealHeading
             title={card.heading}
             subtitle={card.subtitle}
-            className={i === 0 ? 'pt-[42vh] md:pt-[48vh]' : 'pt-32 md:pt-44'}
+            className={i === 0 ? 'pt-[42vh] md:pt-[18vh] pb-2' : 'pt-12 md:pt-20 md:pb-2'}
           />
           <ContentCard
             projects={card.projects}

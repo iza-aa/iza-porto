@@ -308,23 +308,6 @@ function drawCoverImage(
   ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h)
 }
 
-function drawContainImage(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number
-) {
-  const iw = img.naturalWidth || img.width
-  const ih = img.naturalHeight || img.height
-  if (!iw || !ih) return
-  const scale = Math.min(w / iw, h / ih)
-  const dw = iw * scale
-  const dh = ih * scale
-  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
-}
-
 function wrapCanvasText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -423,7 +406,15 @@ function drawAboutTexture(
   const headingBottom = width * 0.022 + lineHeight * heading.length
   const signatureY = headingBottom + height * 0.035
   if (signature?.complete) {
-    drawContainImage(ctx, signature, 0, signatureY, leftW * 0.62, height * 0.09)
+    // Left-aligned: draw the signature flush to x=0 (not centered in its box)
+    const sigBoxW = leftW * 0.62
+    const sigBoxH = height * 0.09
+    const sw = signature.naturalWidth || signature.width
+    const sh = signature.naturalHeight || signature.height
+    if (sw && sh) {
+      const s = Math.min(sigBoxW / sw, sigBoxH / sh)
+      ctx.drawImage(signature, 0, signatureY, sw * s, sh * s)
+    }
   } else {
     ctx.fillStyle = 'rgba(243,238,229,0.86)'
     ctx.font = `italic ${Math.max(34, width * 0.024)}px ${serif}`
@@ -442,12 +433,6 @@ function drawAboutTexture(
     width * 0.015,
     5
   )
-  ctx.strokeStyle = 'rgba(201,162,39,0.34)'
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(-width * 0.014, width * 0.04)
-  ctx.lineTo(-width * 0.014, height * 0.56)
-  ctx.stroke()
   ctx.restore()
 
   ctx.save()
@@ -647,7 +632,6 @@ function LivingCanvasHero({
   const projectBurnRef = useRef(0)
   const aboutLayerRef = useRef(0)
 
-  const active = frameIndex < totalFrames - 1
   progressRef.current = Math.min(1, frameIndex / (totalFrames * 0.6))
   burnRef.current = burnProgress
   projectBurnRef.current = projectBurnProgress
@@ -656,15 +640,13 @@ function LivingCanvasHero({
   // Nav idles center until its flight trigger (frame 70) — keep the scrim up
   // exactly that long, then let the painting stand fully revealed.
   const navCentered = frameIndex <= 70
+  // Hero ambience (light shaft, haze, dusk, grain, vignette) fades out in step
+  // with the About→Project burn, so it burns away together with the scene
+  // rather than vanishing instantly.
   const projectForegroundOpacity = 1 - projectBurnProgress
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      <style>{`
-        @keyframes canvas-shaft { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.7; } }
-        @keyframes canvas-haze  { 0%, 100% { transform: translateX(-3%); } 50% { transform: translateX(3%); } }
-      `}</style>
-
       {/* Base painting — LCP + WebGL fallback for the intro/about phases. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- intentional LCP/fallback layer under the WebGL canvas */}
       <img
@@ -680,7 +662,10 @@ function LivingCanvasHero({
         className="pointer-events-none absolute inset-0"
         style={{ pointerEvents: 'none' }}
         dpr={[1, 2]}
-        frameloop={active ? 'always' : 'never'}
+        // Always-on: the idle ambience (Ken Burns drift, light shaft) must keep
+        // breathing even after the burn frame parks at a rest value. The plane
+        // is a single static quad, so the idle cost is negligible.
+        frameloop="always"
         camera={{ fov: 45, position: [0, 0, 2] }}
         gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
       >
@@ -694,29 +679,9 @@ function LivingCanvasHero({
         </Suspense>
       </Canvas>
 
-      {/* Soft light shaft following the painting's sun (upper left sky) */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none mix-blend-soft-light"
-        style={{
-          background:
-            'linear-gradient(118deg, rgba(255,232,170,0.55) 0%, rgba(255,222,150,0.18) 28%, transparent 55%)',
-          animation: 'canvas-shaft 11s ease-in-out infinite',
-          opacity: projectForegroundOpacity,
-        }}
-      />
-
-      {/* Thin ground haze drifting at the painting's foot */}
-      <div
-        aria-hidden
-        className="absolute bottom-[-4%] left-[-8%] right-[-8%] h-[24%] pointer-events-none"
-        style={{
-          background: 'linear-gradient(to top, rgba(238,226,200,0.65), transparent 75%)',
-          filter: 'blur(8px)',
-          animation: 'canvas-haze 26s ease-in-out infinite',
-          opacity: 0.35 * projectForegroundOpacity,
-        }}
-      />
+      {/* Light shaft & golden haze live in a single fixed overlay in
+          HeroSection (shared across hero/about/project) so there is never a
+          double-haze glitch during the burn hand-off. */}
 
       {/* Dusk dimming in dark mode — museum after hours */}
       <div
@@ -735,13 +700,7 @@ function LivingCanvasHero({
         }}
       />
 
-      {/* Tiny museum label — quiet attribution, bottom right */}
-      <p
-        className="absolute bottom-6 right-7 md:bottom-8 md:right-10 font-inknut-antiqua text-[9px] md:text-[10px] tracking-[0.22em] uppercase text-[#f0e6cf]/55 pointer-events-none select-none"
-        style={{ opacity: projectForegroundOpacity }}
-      >
-        After Nicolas Poussin · MDCXL
-      </p>
+
 
       {/* Canvas grain + vignette — same material language as every section */}
       <div

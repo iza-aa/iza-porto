@@ -8,7 +8,7 @@ import NavOverlay from '../../components/NavOverlay'
 import ProjectRevealContent from './components/ProjectRevealContent'
 import BurnEdgeMask from './components/BurnRevealMask'
 import ProjectWebGLBackground from './components/ProjectWebGLBackground'
-import { useStageProgress, SPACER_A_VH, SPACER_B_VH, SPACER_C_VH } from './components/useScrollFrame'
+import { useScrollSnap } from './components/useScrollSnap'
 import { useAppLoading } from '../../context/LoadingContext'
 
 const MIN_LOADING_MS = 1200
@@ -16,13 +16,22 @@ const TOTAL_FRAMES = 192
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const { frameIndex, aboutProgress } = useStageProgress(sectionRef, contentRef)
+  const { frameIndex, aboutProgress, phase } = useScrollSnap()
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
   const { setAppLoading } = useAppLoading()
   const startTimeRef = useRef(Date.now())
+
+  // Track theme so the ambience haze can warm/cool with light vs dark mode
+  const [isDark, setIsDark] = useState(true)
+  useEffect(() => {
+    const update = () => setIsDark(document.documentElement.classList.contains('dark'))
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(document.documentElement, { attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -68,59 +77,92 @@ export default function HeroSection() {
   return (
     <>
       <LoadingScreen isLoading={showLoading} progress={progress} />
-      <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={TOTAL_FRAMES} heroRef={sectionRef} />
+      <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={TOTAL_FRAMES} />
 
+      {/* ── Project section — sits BEHIND the hero stage and is painted from the
+          moment the About→Project burn begins, so the shader's transparent burn
+          holes reveal the real Project DOM through them (no crossfade gap = no
+          white flash). Interactive only once fully released. ── */}
+      <div
+        className="relative z-10"
+        style={{
+          opacity: phase === 'hero' ? 0 : 1,
+          pointerEvents: phase === 'project' ? 'auto' : 'none',
+        }}
+      >
+        {/* Living project backdrop (leopard WebGL, its own drift/grain/vignette
+            ambience). z-0 so it sits ABOVE the page's solid <main> background
+            but behind the project content — a negative z-index would hide it
+            behind that background and the ambience would appear to vanish. */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <ProjectWebGLBackground />
+        </div>
+        <div className="relative z-[1]">
+          <BurnEdgeMask burnProgress={projectEdgeBurnProgress} className="w-full">
+            <ProjectRevealContent />
+          </BurnEdgeMask>
+        </div>
+      </div>
+
+      {/* ── Hero + About stage — FIXED full-screen WebGL, ON TOP of the project
+          section. The shader burns itself transparent to reveal the project
+          below. Stays mounted/visible through the whole burn; only hidden once
+          the burn has fully completed so its idle ambience never disappears
+          mid-scroll. ── */}
       <motion.div
         ref={sectionRef}
         id="home"
-        style={{ zIndex: 10, position: 'relative' }}
-        className="relative"
+        className="fixed inset-0 z-20 pointer-events-none overflow-hidden"
         initial={{ opacity: 0 }}
-        animate={revealContent ? { opacity: 1 } : { opacity: 0 }}
+        animate={{ opacity: revealContent ? 1 : 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
+        style={{ visibility: phase === 'project' ? 'hidden' : 'visible' }}
       >
-        {/* ── Sticky canvas stage — hero + about live entirely in WebGL.
-            Pins through phases A & B; the project curtain rises over it. ── */}
-        <div className="sticky top-0 h-screen overflow-hidden z-20 pointer-events-none">
-          <div className="absolute inset-0 pointer-events-none">
-            <LivingCanvasHero
-              frameIndex={frameIndex}
-              totalFrames={TOTAL_FRAMES}
-              burnProgress={burnProgress}
-              projectBurnProgress={projectEdgeBurnProgress}
-              aboutContentProgress={aboutProgress}
-            />
-          </div>
-        </div>
-
-        {/* ── Phase A travel: painting intro + about burn (frames 0–112) ── */}
-        <div aria-hidden style={{ height: `${SPACER_A_VH}vh` }} />
-
-        {/* ── Phase B travel: pure-WebGL About reading hold (frames 112–136) ── */}
-        <div aria-hidden style={{ height: `${SPACER_B_VH}vh` }} />
-
-        {/* ── Phase C travel: the project curtain rises over the about scene
-            (frames 136→191). The curtain DOM below is the SAME element that
-            scrolls in phase D — no overlay, no duplicate. ── */}
-        <div aria-hidden style={{ height: `${SPACER_C_VH}vh` }} />
-
-        {/* ── Project curtain: ONE DOM panel in normal flow. It scrolls up over
-            the pinned about scene like the hero→about curtain, but its TOP EDGE
-            is torn into fire (BurnEdgeMask, shader fbm) instead of a flat line.
-            Its content scrolls natively afterwards — no overlay, no duplicate,
-            no inner scrollbar. The negative margin pulls it up so it begins
-            covering the scene while phase C scroll is still in progress. ── */}
-        <div id="project" ref={contentRef} className="relative z-10" style={{ marginTop: `-${SPACER_C_VH + 100}vh` }}>
-          <div className="sticky top-0 h-screen overflow-hidden pointer-events-none">
-            <ProjectWebGLBackground />
-          </div>
-          <div className="relative z-10 -mt-[100vh]">
-            <BurnEdgeMask burnProgress={projectEdgeBurnProgress} className="w-full">
-              <ProjectRevealContent />
-            </BurnEdgeMask>
-          </div>
-        </div>
+        <LivingCanvasHero
+          frameIndex={frameIndex}
+          totalFrames={TOTAL_FRAMES}
+          burnProgress={burnProgress}
+          projectBurnProgress={projectEdgeBurnProgress}
+          aboutContentProgress={aboutProgress}
+        />
       </motion.div>
+
+      {/* ── Ambience haze — THE single source of haze/light-shaft for the whole
+          experience (hero, about, project). One fixed overlay above everything
+          means there is never a double-haze glitch during the burn hand-off.
+          Theme-aware: warm gold in light mode, cool silver-blue & dimmer in
+          dark mode (museum after hours). Fades in with the content reveal. ── */}
+      <div
+        aria-hidden
+        className="fixed inset-0 z-30 pointer-events-none overflow-hidden"
+        style={{ opacity: revealContent ? 1 : 0, transition: 'opacity 0.8s ease' }}
+      >
+        <style>{`
+          @keyframes proj-shaft { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.62; } }
+          @keyframes proj-haze  { 0%, 100% { transform: translateX(-3%); } 50% { transform: translateX(3%); } }
+        `}</style>
+        {/* Soft light shaft — warm gold (light) / cool moonlight (dark) */}
+        <div
+          className="absolute inset-0 mix-blend-soft-light"
+          style={{
+            background: isDark
+              ? 'linear-gradient(118deg, rgba(180,205,255,0.2) 0%, rgba(150,180,235,0.07) 28%, transparent 55%)'
+              : 'linear-gradient(118deg, rgba(255,232,170,0.32) 0%, rgba(255,222,150,0.1) 28%, transparent 55%)',
+            animation: 'proj-shaft 11s ease-in-out infinite',
+          }}
+        />
+        {/* Drifting haze/cloud at the top edge — warm cream / cool silver */}
+        <div
+          className="absolute top-[-8%] left-[-8%] right-[-8%] h-[24%]"
+          style={{
+            background: isDark
+              ? 'linear-gradient(to bottom, rgba(186,198,224,0.18), transparent 82%)'
+              : 'linear-gradient(to bottom, rgba(238,226,200,0.3), transparent 82%)',
+            filter: 'blur(14px)',
+            animation: 'proj-haze 26s ease-in-out infinite',
+          }}
+        />
+      </div>
     </>
   )
 }

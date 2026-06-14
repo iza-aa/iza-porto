@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, RefObject } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { SPACER_A_VH } from '../section/hero-section/components/useScrollFrame'
 
 const FLIGHT_TRIGGER = 70
 // Stage frames where the pure-WebGL About and the project reveal own the
@@ -25,10 +24,9 @@ interface Props {
   frameIndex: number
   trigger: boolean
   totalFrames: number
-  heroRef: RefObject<HTMLDivElement>
 }
 
-export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
+export default function NavOverlay({ frameIndex, trigger }: Props) {
   // getActive lives in a mount-once effect — read the live frame via ref
   const frameIndexRef = useRef(frameIndex)
   frameIndexRef.current = frameIndex
@@ -129,18 +127,13 @@ export default function NavOverlay({ frameIndex, trigger, heroRef }: Props) {
         navLockRef.current = false
       }, 1200)  // unlock after smooth scroll finishes
 
-    if (label === 'home') {
-      setActiveSection('home')
+    // hero/about/project transitions are driven by the scroll-snap engine
+    // (gesture-triggered), not by scroll position — clicking them just marks
+    // the active item and returns to the top of the stage. The DOM sections
+    // below (skills/experience/contact) still scroll normally.
+    if (label === 'home' || label === 'about' || label === 'project') {
+      setActiveSection(label)
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else if (label === 'about') {
-      // About is a WebGL stage phase, not a DOM section — scroll to the
-      // middle of its reading hold (just past spacer A + the ramp)
-      setActiveSection('about')
-      const hero = heroRef.current
-      if (hero) {
-        const target = hero.offsetTop + ((SPACER_A_VH / 100) + 0.6) * window.innerHeight
-        window.scrollTo({ top: target, behavior: 'smooth' })
-      }
     } else {
       const el = document.getElementById(label)
       if (el) {
