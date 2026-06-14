@@ -10,15 +10,20 @@ export default function Home() {
   return (
     <main className="bg-[var(--background)] transition-colors duration-350">
       <HeroSection />
-      <VirtualSection id="project">
-        <ProjectContent cinematicShell skipIntro skipFirstBatch />
-      </VirtualSection>
-      <VirtualSection id="skills">
-        <SkillsSection isVisible={true} />
-      </VirtualSection>
-      <VirtualSection id="experience">
-        <ExperienceSection />
-      </VirtualSection>
+      {/* Sections after the hero must sit ABOVE the hero's fixed WebGL layers
+          (project backdrop z-0, hero stage z-20, haze z-30) — otherwise those
+          fixed overlays bleed over them as you scroll past. relative z-40 wins. */}
+      <div className="relative z-40">
+        <VirtualSection id="project">
+          <ProjectContent cinematicShell skipIntro skipFirstBatch />
+        </VirtualSection>
+        <VirtualSection id="skills">
+          <SkillsSection isVisible={true} />
+        </VirtualSection>
+        <VirtualSection id="experience">
+          <ExperienceSection />
+        </VirtualSection>
+      </div>
     </main>
   )
 }
