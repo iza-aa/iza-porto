@@ -17,16 +17,18 @@ const PROJECT_FRAME = LAST_FRAME
 // burn that reads clearly instead of snapping past.
 const HERO_TO_ABOUT_MS = 4200
 const ABOUT_TO_PROJECT_MS = 2300
+const PROJECT_TO_SKILLS_MS = 2300
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
 
 // A downward gesture past this wheel/touch delta triggers the next transition.
 const TRIGGER_DELTA = 24
 
-export type SnapPhase = 'hero' | 'about' | 'project'
+export type SnapPhase = 'hero' | 'about' | 'project' | 'skills'
 
 export interface SnapState {
   frameIndex: number
   aboutProgress: number
+  skillsBurnProgress: number
   phase: SnapPhase
 }
 
@@ -46,11 +48,18 @@ export interface SnapState {
  */
 export function useScrollSnap(): SnapState {
   const lenis = useLenis()
-  const [state, setState] = useState<SnapState>({ frameIndex: 0, aboutProgress: 1, phase: 'hero' })
+  const [state, setState] = useState<SnapState>({
+    frameIndex: 0,
+    aboutProgress: 1,
+    skillsBurnProgress: 0,
+    phase: 'hero',
+  })
 
   // Mutable refs mirror state for use inside event handlers without re-binding
   const phaseRef = useRef<SnapPhase>('hero')
   const frameRef = useRef(0)
+  const skillsBurnRef = useRef(0)
+  const projectReturnScrollRef = useRef(0)
   const animatingRef = useRef(false)
   const lenisRef = useRef(lenis)
   lenisRef.current = lenis
@@ -118,6 +127,72 @@ export function useScrollSnap(): SnapState {
       })
     }
 
+    const animateSkillsBurn = (target: number, onDone: () => void) => {
+      animatingRef.current = true
+      lenisRef.current?.stop()
+      const from = skillsBurnRef.current
+      const start = performance.now()
+
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / PROJECT_TO_SKILLS_MS)
+        const value = from + (target - from) * easeInOut(t)
+        skillsBurnRef.current = value
+        setState((s) => ({ ...s, skillsBurnProgress: Math.round(value * 1000) / 1000 }))
+
+        if (t < 1) {
+          requestAnimationFrame(tick)
+        } else {
+          skillsBurnRef.current = target
+          animatingRef.current = false
+          lenisRef.current?.start()
+          onDone()
+        }
+      }
+
+      requestAnimationFrame(tick)
+    }
+
+    const startProjectToSkills = () => {
+      if (animatingRef.current || phaseRef.current !== 'project') return
+      projectReturnScrollRef.current = window.scrollY
+      animateSkillsBurn(1, () => {
+        phaseRef.current = 'skills'
+        setState((s) => ({ ...s, phase: 'skills', skillsBurnProgress: 1 }))
+        lenisRef.current?.scrollTo(0, { immediate: true })
+        const skillsStage = document.querySelector('[data-skills-stage]') as HTMLElement | null
+        if (skillsStage) skillsStage.scrollTop = 0
+        lenisRef.current?.stop()
+      })
+    }
+
+    const reverseSkillsToProject = () => {
+      if (animatingRef.current || phaseRef.current !== 'skills') return
+      // Restore the project's saved scroll position FIRST, while the project
+      // layer is still fully burned away (skillsBurnProgress = 1, transparent),
+      // so the jump is invisible — mirrors how the forward transition hides its
+      // scrollTo reset until after the burn. Lenis must be running for the
+      // scrollTo to land, then the burn animation re-locks it.
+      lenisRef.current?.start()
+      lenisRef.current?.scrollTo(projectReturnScrollRef.current, { immediate: true })
+      phaseRef.current = 'project'
+      setState((s) => ({ ...s, phase: 'project' }))
+      animateSkillsBurn(0, () => {
+        setState((s) => ({ ...s, skillsBurnProgress: 0 }))
+      })
+    }
+
+    const atProjectBottom = () => {
+      const stage = document.querySelector('[data-project-stage]') as HTMLElement | null
+      if (!stage) return false
+      const rect = stage.getBoundingClientRect()
+      return rect.bottom <= window.innerHeight + 60
+    }
+
+    const atSkillsTop = () => {
+      const stage = document.querySelector('[data-skills-stage]') as HTMLElement | null
+      return !stage || stage.scrollTop <= 2
+    }
+
     // Wheel handling: while in hero/about, the page must not scroll — every
     // downward gesture is a transition trigger instead.
     const onWheel = (e: WheelEvent) => {
@@ -126,9 +201,25 @@ export function useScrollSnap(): SnapState {
       if (phase === 'project') {
         // Native scroll owns the page — except an upward gesture at the very
         // top re-enters About.
-        if (!animatingRef.current && e.deltaY < -TRIGGER_DELTA && window.scrollY <= 2) {
+        if (animatingRef.current) return
+        if (e.deltaY < -TRIGGER_DELTA && window.scrollY <= 2) {
           e.preventDefault()
           reverseProjectToAbout()
+        } else if (e.deltaY > TRIGGER_DELTA && atProjectBottom()) {
+          e.preventDefault()
+          startProjectToSkills()
+        }
+        return
+      }
+
+      if (phase === 'skills') {
+        if (animatingRef.current) {
+          e.preventDefault()
+          return
+        }
+        if (e.deltaY < -TRIGGER_DELTA && atSkillsTop()) {
+          e.preventDefault()
+          reverseSkillsToProject()
         }
         return
       }
@@ -159,9 +250,25 @@ export function useScrollSnap(): SnapState {
       const dy = touchStartY - y
 
       if (phase === 'project') {
-        if (!animatingRef.current && dy < -TRIGGER_DELTA && window.scrollY <= 2) {
+        if (animatingRef.current) return
+        if (dy < -TRIGGER_DELTA && window.scrollY <= 2) {
           e.preventDefault()
           reverseProjectToAbout()
+        } else if (dy > TRIGGER_DELTA && atProjectBottom()) {
+          e.preventDefault()
+          startProjectToSkills()
+        }
+        return
+      }
+
+      if (phase === 'skills') {
+        if (animatingRef.current) {
+          e.preventDefault()
+          return
+        }
+        if (dy < -TRIGGER_DELTA && atSkillsTop()) {
+          e.preventDefault()
+          reverseSkillsToProject()
         }
         return
       }

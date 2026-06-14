@@ -8,6 +8,7 @@ import NavOverlay from '../../components/NavOverlay'
 import ProjectRevealContent from './components/ProjectRevealContent'
 import BurnEdgeMask from './components/BurnRevealMask'
 import ProjectWebGLBackground from './components/ProjectWebGLBackground'
+import SkillsSection from '../skills-section/SkillsSection'
 import { useScrollSnap } from './components/useScrollSnap'
 import { useAppLoading } from '../../context/LoadingContext'
 
@@ -16,7 +17,7 @@ const TOTAL_FRAMES = 192
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const { frameIndex, aboutProgress, phase } = useScrollSnap()
+  const { frameIndex, aboutProgress, skillsBurnProgress, phase } = useScrollSnap()
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
@@ -79,17 +80,44 @@ export default function HeroSection() {
       <LoadingScreen isLoading={showLoading} progress={progress} />
       <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={TOTAL_FRAMES} />
 
+      <div
+        id="skills"
+        data-skills-stage
+        className="fixed inset-0 z-[5] overflow-y-auto overscroll-contain"
+        style={{
+          opacity: phase === 'skills' ? 1 : skillsBurnProgress,
+          pointerEvents: phase === 'skills' ? 'auto' : 'none',
+          visibility: phase === 'skills' || skillsBurnProgress > 0 ? 'visible' : 'hidden',
+          WebkitOverflowScrolling: 'touch',
+        }}
+        onWheelCapture={(event) => {
+          if (phase !== 'skills') return
+          const el = event.currentTarget
+          const shouldScrollSkills = event.deltaY > 0 || el.scrollTop > 2
+          if (!shouldScrollSkills) return
+          event.preventDefault()
+          event.stopPropagation()
+          el.scrollTop += event.deltaY
+        }}
+      >
+        <SkillsSection isVisible={true} />
+      </div>
+
       {/* ── Project section — sits BEHIND the hero stage and is painted from the
           moment the About→Project burn begins, so the shader's transparent burn
           holes reveal the real Project DOM through them (no crossfade gap = no
           white flash). Interactive only once fully released. ── */}
-      <div
-        className="relative z-10"
-        style={{
-          opacity: phase === 'hero' ? 0 : 1,
-          pointerEvents: phase === 'project' ? 'auto' : 'none',
-        }}
+      <BurnEdgeMask
+        burnProgress={skillsBurnProgress}
+        className={`relative z-10 ${phase === 'project' ? '' : 'pointer-events-none'}`}
       >
+        <div
+          data-project-stage
+          style={{
+            opacity: phase === 'hero' ? 0 : 1,
+            pointerEvents: phase === 'project' ? 'auto' : 'none',
+          }}
+        >
         {/* Living project backdrop (leopard WebGL, its own drift/grain/vignette
             ambience). z-0 so it sits ABOVE the page's solid <main> background
             but behind the project content — a negative z-index would hide it
@@ -98,11 +126,12 @@ export default function HeroSection() {
           <ProjectWebGLBackground />
         </div>
         <div className="relative z-[1]">
-          <BurnEdgeMask burnProgress={projectEdgeBurnProgress} className="w-full">
+          <BurnEdgeMask className="w-full">
             <ProjectRevealContent />
           </BurnEdgeMask>
         </div>
-      </div>
+        </div>
+      </BurnEdgeMask>
 
       {/* ── Hero + About stage — FIXED full-screen WebGL, ON TOP of the project
           section. The shader burns itself transparent to reveal the project
@@ -116,7 +145,7 @@ export default function HeroSection() {
         initial={{ opacity: 0 }}
         animate={{ opacity: revealContent ? 1 : 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        style={{ visibility: phase === 'project' ? 'hidden' : 'visible' }}
+        style={{ visibility: phase === 'project' || phase === 'skills' ? 'hidden' : 'visible' }}
       >
         <LivingCanvasHero
           frameIndex={frameIndex}
@@ -135,7 +164,7 @@ export default function HeroSection() {
       <div
         aria-hidden
         className="fixed inset-0 z-30 pointer-events-none overflow-hidden"
-        style={{ opacity: revealContent ? 1 : 0, transition: 'opacity 0.8s ease' }}
+        style={{ opacity: revealContent && phase !== 'skills' ? 1 : 0, transition: 'opacity 0.8s ease' }}
       >
         <style>{`
           @keyframes proj-shaft { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.62; } }

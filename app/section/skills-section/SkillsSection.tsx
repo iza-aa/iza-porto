@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TitleHeading } from '../../components/TitleHeading'
 import LiquidGlass from '../../components/LiquidGlass'
+import SkillWebGLBackground from './SkillWebGLBackground'
 
 
 const LOCAL_EMOJIS = [
@@ -253,9 +254,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
 
   return (
     <section className="relative w-full bg-[#1b1309]">
+      <SkillWebGLBackground />
       {/* Opaque atmospheric backdrop so the fixed hero stage never shows
           through — same leopard + grain language as the project section. */}
-      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div aria-hidden className="hidden">
         {/* eslint-disable-next-line @next/next/no-img-element -- decorative full-bleed backdrop */}
         <img
           src="/asset/project-section/projectbg/leopardbg.jpeg"
@@ -268,7 +270,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
           style={{ backgroundImage: 'url("/asset/noise.png")', backgroundRepeat: 'repeat' }}
         />
       </div>
-      <div className="relative">
+      <div className="relative ">
       <style>{`
         @keyframes emoji-waterfall {
           0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
