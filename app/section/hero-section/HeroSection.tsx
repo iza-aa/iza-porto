@@ -6,9 +6,10 @@ import LoadingScreen from '../../components/LoadingScreen'
 import LivingCanvasHero from './components/LivingCanvasHero'
 import NavOverlay from '../../components/NavOverlay'
 import ProjectRevealContent from './components/ProjectRevealContent'
-import BurnEdgeMask from './components/BurnRevealMask'
+import BurnVeil from './components/BurnVeil'
 import ProjectWebGLBackground from './components/ProjectWebGLBackground'
 import SkillsSection from '../skills-section/SkillsSection'
+import ExperienceSection from '../experience-section/ExperienceSection'
 import { useScrollSnap } from './components/useScrollSnap'
 import { useAppLoading } from '../../context/LoadingContext'
 
@@ -17,7 +18,7 @@ const TOTAL_FRAMES = 192
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const { frameIndex, aboutProgress, skillsBurnProgress, phase } = useScrollSnap()
+  const { frameIndex, aboutProgress, skillsBurnProgress, experienceBurnProgress, phase } = useScrollSnap()
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
@@ -80,14 +81,20 @@ export default function HeroSection() {
       <LoadingScreen isLoading={showLoading} progress={progress} />
       <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={TOTAL_FRAMES} />
 
+      {/* ── Skills section — sits ABOVE project (z-16) and below the burn veil
+          (z-17). Becomes visible only ONCE THE FLAME STARTS (burn ≥ 0.18), i.e.
+          after the veil has fully darkened to black over project. Before that,
+          project must remain the thing seen through the still-transparent veil,
+          so skills must NOT show yet. As the veil then burns transparent, the
+          skills layer right beneath it is revealed (not the project below). ── */}
       <div
         id="skills"
         data-skills-stage
-        className="fixed inset-0 z-[5] overflow-y-auto overscroll-contain"
+        className="fixed inset-0 z-[16] overflow-y-auto overscroll-contain"
         style={{
-          opacity: phase === 'skills' ? 1 : skillsBurnProgress,
+          opacity: phase === 'skills' || skillsBurnProgress >= 0.18 ? 1 : 0,
           pointerEvents: phase === 'skills' ? 'auto' : 'none',
-          visibility: phase === 'skills' || skillsBurnProgress > 0 ? 'visible' : 'hidden',
+          visibility: phase === 'skills' || skillsBurnProgress >= 0.18 ? 'visible' : 'hidden',
           WebkitOverflowScrolling: 'touch',
         }}
         onWheelCapture={(event) => {
@@ -103,21 +110,17 @@ export default function HeroSection() {
         <SkillsSection isVisible={true} />
       </div>
 
-      {/* ── Project section — sits BEHIND the hero stage and is painted from the
-          moment the About→Project burn begins, so the shader's transparent burn
-          holes reveal the real Project DOM through them (no crossfade gap = no
-          white flash). Interactive only once fully released. ── */}
-      <BurnEdgeMask
-        burnProgress={skillsBurnProgress}
-        className={`relative z-10 ${phase === 'project' ? '' : 'pointer-events-none'}`}
+      {/* ── Project section — sits BEHIND the hero stage, revealed by the WebGL
+          about→project burn. It stays fully solid; the project→skills burn is
+          done by the BurnVeil layer ABOVE it (z-15), not by masking project. ── */}
+      <div
+        data-project-stage
+        className="relative z-10"
+        style={{
+          opacity: phase === 'hero' ? 0 : 1,
+          pointerEvents: phase === 'project' ? 'auto' : 'none',
+        }}
       >
-        <div
-          data-project-stage
-          style={{
-            opacity: phase === 'hero' ? 0 : 1,
-            pointerEvents: phase === 'project' ? 'auto' : 'none',
-          }}
-        >
         {/* Living project backdrop (leopard WebGL, its own drift/grain/vignette
             ambience). z-0 so it sits ABOVE the page's solid <main> background
             but behind the project content — a negative z-index would hide it
@@ -126,12 +129,50 @@ export default function HeroSection() {
           <ProjectWebGLBackground />
         </div>
         <div className="relative z-[1]">
-          <BurnEdgeMask className="w-full">
-            <ProjectRevealContent />
-          </BurnEdgeMask>
+          <ProjectRevealContent />
         </div>
-        </div>
-      </BurnEdgeMask>
+      </div>
+
+      {/* ── Project→Skills burn — a WebGL veil ABOVE skills (z-17). It covers
+          the screen then burns itself away with the SAME gold flame as
+          about→project; the skills layer (z-16) directly beneath is revealed
+          through the burned-away holes. Below the hero stage (z-20). ── */}
+      <div className="fixed inset-0 z-[17] pointer-events-none">
+        <BurnVeil progress={skillsBurnProgress} className="absolute inset-0" />
+      </div>
+
+      {/* ── Experience section — sits ABOVE skills (z-26), below its burn veil
+          (z-27). Visible only once the skills→experience flame starts
+          (experienceBurnProgress ≥ 0.18), after the veil has darkened over
+          skills. Revealed as that veil burns transparent. ── */}
+      <div
+        id="experience"
+        data-experience-stage
+        className="fixed inset-0 z-[26] overflow-y-auto overscroll-contain"
+        style={{
+          opacity: phase === 'experience' || experienceBurnProgress >= 0.18 ? 1 : 0,
+          pointerEvents: phase === 'experience' ? 'auto' : 'none',
+          visibility: phase === 'experience' || experienceBurnProgress >= 0.18 ? 'visible' : 'hidden',
+          WebkitOverflowScrolling: 'touch',
+        }}
+        onWheelCapture={(event) => {
+          if (phase !== 'experience') return
+          const el = event.currentTarget
+          const shouldScroll = event.deltaY > 0 || el.scrollTop > 2
+          if (!shouldScroll) return
+          event.preventDefault()
+          event.stopPropagation()
+          el.scrollTop += event.deltaY
+        }}
+      >
+        <ExperienceSection />
+      </div>
+
+      {/* ── Skills→Experience burn — veil ABOVE experience (z-27). Darkens over
+          skills then burns away with the gold flame to reveal experience. ── */}
+      <div className="fixed inset-0 z-[27] pointer-events-none">
+        <BurnVeil progress={experienceBurnProgress} className="absolute inset-0" />
+      </div>
 
       {/* ── Hero + About stage — FIXED full-screen WebGL, ON TOP of the project
           section. The shader burns itself transparent to reveal the project

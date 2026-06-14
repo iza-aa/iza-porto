@@ -22,13 +22,18 @@ const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2,
 
 // A downward gesture past this wheel/touch delta triggers the next transition.
 const TRIGGER_DELTA = 24
+// Reversing skills→project needs a clearly deliberate upward gesture, so a
+// small reflexive scroll-up at the top of skills doesn't bounce back.
+const REVERSE_DELTA = 90
 
-export type SnapPhase = 'hero' | 'about' | 'project' | 'skills'
+export type SnapPhase = 'hero' | 'about' | 'project' | 'skills' | 'experience'
 
 export interface SnapState {
   frameIndex: number
   aboutProgress: number
   skillsBurnProgress: number
+  // 0..1 darken-then-burn of the skills layer away to reveal experience.
+  experienceBurnProgress: number
   phase: SnapPhase
 }
 
@@ -52,6 +57,7 @@ export function useScrollSnap(): SnapState {
     frameIndex: 0,
     aboutProgress: 1,
     skillsBurnProgress: 0,
+    experienceBurnProgress: 0,
     phase: 'hero',
   })
 
@@ -59,7 +65,9 @@ export function useScrollSnap(): SnapState {
   const phaseRef = useRef<SnapPhase>('hero')
   const frameRef = useRef(0)
   const skillsBurnRef = useRef(0)
+  const experienceBurnRef = useRef(0)
   const projectReturnScrollRef = useRef(0)
+  const skillsReturnScrollRef = useRef(0)
   const animatingRef = useRef(false)
   const lenisRef = useRef(lenis)
   lenisRef.current = lenis
@@ -181,6 +189,53 @@ export function useScrollSnap(): SnapState {
       })
     }
 
+    const animateExperienceBurn = (target: number, onDone: () => void) => {
+      animatingRef.current = true
+      lenisRef.current?.stop()
+      const from = experienceBurnRef.current
+      const start = performance.now()
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / PROJECT_TO_SKILLS_MS)
+        const value = from + (target - from) * easeInOut(t)
+        experienceBurnRef.current = value
+        setState((s) => ({ ...s, experienceBurnProgress: Math.round(value * 1000) / 1000 }))
+        if (t < 1) {
+          requestAnimationFrame(tick)
+        } else {
+          experienceBurnRef.current = target
+          animatingRef.current = false
+          lenisRef.current?.start()
+          onDone()
+        }
+      }
+      requestAnimationFrame(tick)
+    }
+
+    const startSkillsToExperience = () => {
+      if (animatingRef.current || phaseRef.current !== 'skills') return
+      const skillsStage = document.querySelector('[data-skills-stage]') as HTMLElement | null
+      skillsReturnScrollRef.current = skillsStage ? skillsStage.scrollTop : 0
+      animateExperienceBurn(1, () => {
+        phaseRef.current = 'experience'
+        setState((s) => ({ ...s, phase: 'experience', experienceBurnProgress: 1 }))
+        const expStage = document.querySelector('[data-experience-stage]') as HTMLElement | null
+        if (expStage) expStage.scrollTop = 0
+      })
+    }
+
+    const reverseExperienceToSkills = () => {
+      if (animatingRef.current || phaseRef.current !== 'experience') return
+      phaseRef.current = 'skills'
+      setState((s) => ({ ...s, phase: 'skills' }))
+      // Restore skills' scroll position while it is still hidden behind the
+      // full burn (experienceBurnProgress = 1).
+      const skillsStage = document.querySelector('[data-skills-stage]') as HTMLElement | null
+      if (skillsStage) skillsStage.scrollTop = skillsReturnScrollRef.current
+      animateExperienceBurn(0, () => {
+        setState((s) => ({ ...s, experienceBurnProgress: 0 }))
+      })
+    }
+
     const atProjectBottom = () => {
       const stage = document.querySelector('[data-project-stage]') as HTMLElement | null
       if (!stage) return false
@@ -190,6 +245,17 @@ export function useScrollSnap(): SnapState {
 
     const atSkillsTop = () => {
       const stage = document.querySelector('[data-skills-stage]') as HTMLElement | null
+      return !stage || stage.scrollTop <= 2
+    }
+
+    const atSkillsBottom = () => {
+      const stage = document.querySelector('[data-skills-stage]') as HTMLElement | null
+      if (!stage) return true
+      return stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 60
+    }
+
+    const atExperienceTop = () => {
+      const stage = document.querySelector('[data-experience-stage]') as HTMLElement | null
       return !stage || stage.scrollTop <= 2
     }
 
@@ -217,9 +283,24 @@ export function useScrollSnap(): SnapState {
           e.preventDefault()
           return
         }
-        if (e.deltaY < -TRIGGER_DELTA && atSkillsTop()) {
+        if (e.deltaY < -REVERSE_DELTA && atSkillsTop()) {
           e.preventDefault()
           reverseSkillsToProject()
+        } else if (e.deltaY > TRIGGER_DELTA && atSkillsBottom()) {
+          e.preventDefault()
+          startSkillsToExperience()
+        }
+        return
+      }
+
+      if (phase === 'experience') {
+        if (animatingRef.current) {
+          e.preventDefault()
+          return
+        }
+        if (e.deltaY < -REVERSE_DELTA && atExperienceTop()) {
+          e.preventDefault()
+          reverseExperienceToSkills()
         }
         return
       }
@@ -266,9 +347,24 @@ export function useScrollSnap(): SnapState {
           e.preventDefault()
           return
         }
-        if (dy < -TRIGGER_DELTA && atSkillsTop()) {
+        if (dy < -REVERSE_DELTA && atSkillsTop()) {
           e.preventDefault()
           reverseSkillsToProject()
+        } else if (dy > TRIGGER_DELTA && atSkillsBottom()) {
+          e.preventDefault()
+          startSkillsToExperience()
+        }
+        return
+      }
+
+      if (phase === 'experience') {
+        if (animatingRef.current) {
+          e.preventDefault()
+          return
+        }
+        if (dy < -REVERSE_DELTA && atExperienceTop()) {
+          e.preventDefault()
+          reverseExperienceToSkills()
         }
         return
       }
