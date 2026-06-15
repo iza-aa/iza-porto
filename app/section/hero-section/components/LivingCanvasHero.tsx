@@ -399,12 +399,10 @@ function drawAboutTexture(
   ctx.save()
   ctx.translate(usableX, top)
   ctx.fillStyle = 'rgba(243,238,229,0.98)'
-  ctx.font = `400 ${Math.max(64, width * (aspect < 0.9 ? 0.064 : 0.062))}px ${display}, Impact, sans-serif`
+  ctx.font = `400 ${Math.max(110, width * (aspect < 0.9 ? 0.12 : 0.104))}px ${display}, Impact, sans-serif`
   ctx.textBaseline = 'top'
-  const heading = aspect < 0.9
-    ? ['Builder of', 'Practical', 'Interfaces']
-    : ['Builder of', 'Practical', 'Interfaces']
-  const lineHeight = Math.max(70, width * (aspect < 0.9 ? 0.062 : 0.06))
+  const heading = ['About']
+  const lineHeight = Math.max(120, width * (aspect < 0.9 ? 0.125 : 0.11))
   heading.forEach((line, index) => {
     ctx.fillText(line, 0, lineHeight * index)
   })

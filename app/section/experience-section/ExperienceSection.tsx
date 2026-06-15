@@ -171,8 +171,8 @@ export default function ExperienceSection({
   }, [])
 
   return (
-    // Background is the shared WebGL backdrop in HeroSection — this section is
-    // transparent so it shows through (no more bg1.jpeg / sticky / -100vh trick).
+    // Background is the shared WebGL backdrop in HeroSection, so this section
+    // stays transparent and lets the living canvas show through.
     <div ref={wrapperRef} className="relative w-full transition-colors duration-300">
       <div className="relative z-10 w-full" >
         <div className="mb-12 pt-12 md:pt-20 md:pb-2 pl-[240px]">
