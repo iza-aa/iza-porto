@@ -32,6 +32,7 @@ const PAINTINGS: { url: string; aspect: number; technique: number }[] = [
   { url: '/asset/webgl-bg/fresco-1.jpg', aspect: 3042 / 3716, technique: TECH.TILT },                 // selected systems (rising figures)
   { url: '/asset/webgl-bg/fresco-3.jpg', aspect: 3038 / 3716, technique: TECH.VERTIGO },              // skills (radial Apollo)
   { url: '/asset/webgl-bg/fresco-4.jpg', aspect: 2996 / 3973, technique: TECH.BARREL },               // experience (framed open sky)
+  { url: '/asset/project-section/projectbg/campagna.jpg', aspect: 4000 / 3005, technique: TECH.PARALLAX }, // contact
 ]
 const FINALE_ORDER = [3, 0, 1, 2, 3]
 

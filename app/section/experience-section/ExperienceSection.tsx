@@ -153,7 +153,11 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
   )
 }
 
-export default function ExperienceSection() {
+export default function ExperienceSection({
+  contactTitleRef,
+}: {
+  contactTitleRef?: (el: HTMLElement | null) => void
+}) {
   const [isDark, setIsDark] = useState(false)
   
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -199,7 +203,7 @@ export default function ExperienceSection() {
         {/* ── THE FINALE — closing "wow": plaque button → gallery darkens →
             (3D lock → signature → contact catalogue). Replaces the old bento
             drop. In normal flow so it sits as the final full-stop of the page. ── */}
-        <FinaleUnlock />
+        <FinaleUnlock titleRef={contactTitleRef} />
       </div>
     </div>
   )

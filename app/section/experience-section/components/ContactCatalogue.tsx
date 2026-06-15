@@ -9,7 +9,7 @@
  */
 
 const PAPER = '/asset/project-section/projectbg/paper.jpg'
-const EMAIL = 'nurashaiwang@gmail.com'
+const EMAIL = 'rezkyhaikal3@gmail.com'
 const GITHUB = 'https://github.com/iza-aa'
 
 type Item = {

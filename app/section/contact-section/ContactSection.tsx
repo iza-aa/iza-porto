@@ -22,7 +22,7 @@ const panelDarkHover =
 const panelLightHover =
   'hover:border-[#b08d57] hover:-translate-y-1 hover:shadow-[inset_0_0_0_3px_#efe8d6,inset_0_0_0_4px_rgba(176,141,87,0.45),0_10px_30px_rgba(62,44,28,0.18)]'
 
-const CONTACT_EMAIL = 'nurashaiwang@gmail.com'
+const CONTACT_EMAIL = 'rezkyhaikal3@gmail.com'
 const GITHUB_URL = 'https://github.com/iza-aa'
 
 // Museum catalogue numbering for the small panels

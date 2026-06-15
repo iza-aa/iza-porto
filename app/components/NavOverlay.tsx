@@ -39,6 +39,7 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
   const [activeSection, setActiveSection] = useState('home')
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const navLockRef = useRef(false)  // prevent scroll override during click navigation
+  const updateActiveRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     const normalIds = ['contact', 'achievements', 'experience', 'skills', 'project']
@@ -72,6 +73,7 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
 
       setActiveSection('home')
     }
+    updateActiveRef.current = getActive
 
     // rAF-throttled: getActive does 5x getBoundingClientRect (layout reads) —
     // cap it at once per displayed frame instead of once per scroll event
@@ -91,6 +93,10 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
       if (rafId !== null) cancelAnimationFrame(rafId)
     }
   }, [])
+
+  useEffect(() => {
+    updateActiveRef.current()
+  }, [frameIndex])
 
   useEffect(() => {
     const tick = () => setTime(
@@ -135,8 +141,13 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
     // below (skills/experience/contact) still scroll normally.
     if (label === 'home' || label === 'about' || label === 'project') {
       setActiveSection(label)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      window.dispatchEvent(new CustomEvent('portfolio:navigate-stage', { detail: { label } }))
     } else {
+      if (frameIndex < PROJECT_FRAME_START) {
+        setActiveSection(label)
+        window.dispatchEvent(new CustomEvent('portfolio:navigate-stage', { detail: { label: 'project', scrollTarget: label } }))
+        return
+      }
       const el = document.getElementById(label)
       if (el) {
         setActiveSection(label)
@@ -180,6 +191,7 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
 
   // Nav text is always white, in both light and dark mode.
   const NAV_WHITE = 'rgba(255,255,255,0.88)'
+  const navInteractive = trigger && !disabled
 
   return (
     <>
@@ -250,8 +262,9 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
           scale: spring,
         }}
       >
-        {NAV_ITEMS.map((item) => {
+  {NAV_ITEMS.map((item) => {
           const isActive = activeSection === item.label
+          const itemInteractive = navInteractive
 
           // Always white, both light and dark mode
           const textColor = 'rgba(255,255,255,0.85)'
@@ -266,10 +279,10 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
                 display: 'flex',
                 alignItems: 'baseline',
                 marginBottom: NAV_GAP,
-                cursor: trigger && !disabled ? 'pointer' : 'default',
+                cursor: itemInteractive ? 'pointer' : 'default',
                 // Only the rows themselves are interactive (the <ul> is click-
                 // through); disabled until the intro reveal completes.
-                pointerEvents: trigger && !disabled ? 'auto' : 'none',
+                pointerEvents: itemInteractive ? 'auto' : 'none',
               }}
               onClick={() => navigateTo(item.label)}
             >

@@ -20,20 +20,16 @@ const TOTAL_FRAMES = 192
 export default function HeroSection() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const { frameIndex, aboutProgress, phase } = useScrollSnap()
-  // Per-title painting (scroll-driven burn). 4 titles, in scroll order:
-  //   0 extended labs · 1 selected systems · 2 skills · 3 experience
+  // Per-title painting (scroll-driven burn). 5 titles, in scroll order:
+  //   0 extended labs · 1 selected systems · 2 skills · 3 experience · 4 contact
   const {
     progressRef: bgProgressRef,
     zoomDwellRef: bgZoomDwellRef,
     setRef: setBgSentinel,
-  } = useActiveSectionBg(4)
+  } = useActiveSectionBg(5)
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
-  const finaleSobelRef = useRef(0)
-  const finaleSobelMixRef = useRef(0)
-  const finaleSobelRafRef = useRef<number | null>(null)
-  const [finaleLocked, setFinaleLocked] = useState(false)
   const { setAppLoading } = useAppLoading()
   const startTimeRef = useRef(Date.now())
 
@@ -45,62 +41,6 @@ export default function HeroSection() {
     const observer = new MutationObserver(update)
     observer.observe(document.documentElement, { attributeFilter: ['class'] })
     return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    const stopFinaleSobel = () => {
-      if (finaleSobelRafRef.current !== null) {
-        cancelAnimationFrame(finaleSobelRafRef.current)
-        finaleSobelRafRef.current = null
-      }
-    }
-
-    const enableFinaleSobel = () => {
-      stopFinaleSobel()
-      setFinaleLocked(true)
-      const start = performance.now()
-      const duration = 2600
-      const tick = (now: number) => {
-        const t = Math.min(1, (now - start) / duration)
-        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-        finaleSobelRef.current = 0.001 + eased * 3.999
-        finaleSobelMixRef.current = Math.min(1, t / 0.18)
-        if (t < 1) {
-          finaleSobelRafRef.current = requestAnimationFrame(tick)
-        } else {
-          finaleSobelRafRef.current = null
-          window.dispatchEvent(new CustomEvent('portfolio:finale-flipbook-complete'))
-        }
-      }
-      finaleSobelRafRef.current = requestAnimationFrame(tick)
-    }
-    const disableFinaleSobel = () => {
-      stopFinaleSobel()
-      const startProgress = finaleSobelRef.current
-      const start = performance.now()
-      const duration = 700
-      const tick = (now: number) => {
-        const t = Math.min(1, (now - start) / duration)
-        finaleSobelRef.current = startProgress
-        finaleSobelMixRef.current = 1 - t
-        if (t < 1) {
-          finaleSobelRafRef.current = requestAnimationFrame(tick)
-        } else {
-          finaleSobelRef.current = 0
-          finaleSobelMixRef.current = 0
-          finaleSobelRafRef.current = null
-          setFinaleLocked(false)
-        }
-      }
-      finaleSobelRafRef.current = requestAnimationFrame(tick)
-    }
-    window.addEventListener('portfolio:finale-sobel-on', enableFinaleSobel)
-    window.addEventListener('portfolio:finale-sobel-off', disableFinaleSobel)
-    return () => {
-      window.removeEventListener('portfolio:finale-sobel-on', enableFinaleSobel)
-      window.removeEventListener('portfolio:finale-sobel-off', disableFinaleSobel)
-      stopFinaleSobel()
-    }
   }, [])
 
   useEffect(() => {
@@ -147,7 +87,7 @@ export default function HeroSection() {
   return (
     <>
       <LoadingScreen isLoading={showLoading} progress={progress} />
-      <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={TOTAL_FRAMES} disabled={finaleLocked} />
+      <NavOverlay frameIndex={frameIndex} trigger={revealContent} totalFrames={TOTAL_FRAMES} />
 
       {/* ── Project section — revealed by the WebGL about→project burn, then
           becomes one long native scroll holding Project → Skills → Experience.
@@ -167,8 +107,6 @@ export default function HeroSection() {
           <ProjectWebGLBackground
             progressRef={bgProgressRef}
             zoomDwellRef={bgZoomDwellRef}
-            forceSobelRef={finaleSobelRef}
-            forceSobelMixRef={finaleSobelMixRef}
           />
         </div>
         <GoldKeyGuide enabled={revealContent && phase !== 'hero'} />
@@ -182,7 +120,7 @@ export default function HeroSection() {
           </div>
           <div id="experience" className="relative">
             <span ref={setBgSentinel(3)} aria-hidden className="absolute top-0 h-px w-px" />
-            <ExperienceSection />
+            <ExperienceSection contactTitleRef={setBgSentinel(4)} />
           </div>
         </div>
       </div>

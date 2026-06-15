@@ -1,28 +1,146 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLenis } from '@studio-freight/react-lenis'
-import ContactCatalogue from './ContactCatalogue'
+import { useEffect, useState } from 'react'
+import { TitleHeading } from '../../../components/TitleHeading'
 
-const KEY_ARRIVED_EVENT = 'portfolio:gold-key-arrived'
-const KEY_UNLOCK_EVENT = 'portfolio:gold-key-unlock'
-const KEY_UNLOCK_COMPLETE_EVENT = 'portfolio:gold-key-unlock-complete'
-const KEY_RESET_EVENT = 'portfolio:gold-key-reset'
-const KEY_RESET_COMPLETE_EVENT = 'portfolio:gold-key-reset-complete'
-const FINALE_FLIPBOOK_COMPLETE = 'portfolio:finale-flipbook-complete'
-const FINALE_SOBEL_ON = 'portfolio:finale-sobel-on'
-const FINALE_SOBEL_OFF = 'portfolio:finale-sobel-off'
+const PAPER = '/asset/project-section/projectbg/paper.jpg'
+const EMAIL = 'rezkyhaikal3@gmail.com'
+const GITHUB = 'https://github.com/iza-aa'
 
-export default function FinaleUnlock() {
-  const lenis = useLenis()
-  const sectionRef = useRef<HTMLElement>(null)
+const contacts = [
+  {
+    label: 'Email',
+    value: EMAIL,
+    href: `mailto:${EMAIL}`,
+    note: 'Best for project briefs, collaboration, and focused technical conversations.',
+  },
+  {
+    label: 'GitHub',
+    value: 'github.com/iza-aa',
+    href: GITHUB,
+    note: 'Source work, experiments, and implementation details from recent builds.',
+  },
+  {
+    label: 'Location',
+    value: 'Depok, Yogyakarta',
+    note: 'Available for remote work and selective on-site collaboration.',
+  },
+  {
+    label: 'Resume',
+    value: 'Download CV',
+    href: '/resume.pdf',
+    note: 'A compact overview of experience, stack, and project responsibility.',
+  },
+]
+
+function ContactRow({
+  label,
+  value,
+  href,
+  note,
+  isDark,
+}: {
+  label: string
+  value: string
+  href?: string
+  note: string
+  isDark: boolean
+}) {
+  const primary = '#f5f0e6'
+  const secondary = 'rgba(245,240,230,0.62)'
+  const gold = isDark ? 'rgba(232,200,122,0.68)' : 'rgba(140,107,69,0.72)'
+  const Tag = (href ? 'a' : 'article') as 'a' | 'article'
+  const linkProps = href
+    ? { href, target: href.startsWith('http') ? '_blank' : undefined, rel: 'noreferrer' }
+    : {}
+
+  return (
+    <Tag
+      {...linkProps}
+      className={`group relative grid gap-3 border-t py-5 transition-colors duration-300 md:grid-cols-[160px_1fr_auto] md:items-start ${
+        href ? 'hover:bg-white/[0.035]' : ''
+      }`}
+      style={{
+        borderColor: isDark ? 'rgba(232,200,122,0.2)' : 'rgba(140,107,69,0.22)',
+      }}
+    >
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em]" style={{ color: secondary }}>
+          {label}
+        </p>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold leading-snug md:text-xl" style={{ color: primary }}>
+          {value}
+        </h3>
+        <p className="mt-1 max-w-[42ch] text-sm font-medium leading-relaxed" style={{ color: secondary }}>
+          {note}
+        </p>
+      </div>
+
+      {href && (
+        <span className="justify-self-start text-[10px] font-semibold uppercase tracking-[0.22em] transition-transform duration-300 group-hover:translate-x-1 md:justify-self-end" style={{ color: gold }}>
+          Open
+        </span>
+      )}
+    </Tag>
+  )
+}
+
+function ContactPanel({ isDark }: { isDark: boolean }) {
+  const goldText = isDark ? '#e8c87a' : '#8c6b45'
+  const primary = '#f5f0e6'
+  const secondary = 'rgba(245,240,230,0.66)'
+
+  return (
+    <div className="grid max-w-6xl gap-14 md:grid-cols-[0.72fr_1.28fr]">
+      <div className="flex flex-col justify-between gap-12 border-t border-[#c9a227]/45 pt-8">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em]" style={{ color: goldText }}>
+            availability
+          </p>
+          <h3 className="mt-5 max-w-[12ch] text-4xl font-semibold leading-[0.95] md:text-5xl" style={{ color: primary }}>
+            Build the next piece.
+          </h3>
+          <p className="mt-5 max-w-[32ch] text-sm font-medium leading-relaxed md:text-base" style={{ color: secondary }}>
+            Send a concise brief, a rough direction, or a problem worth shaping into an interface.
+          </p>
+        </div>
+
+        <a
+          href={`mailto:${EMAIL}`}
+          className="inline-flex min-w-[240px] self-end justify-center border border-[#b08d57]/60 px-5 py-2 text-center text-[10px] uppercase tracking-[0.22em] text-[#d4c4a8] transition-colors duration-300 hover:border-[#b08d57] hover:bg-[#b08d57]/10 md:min-w-[280px] md:text-xs"
+        >
+          Start with email ↗
+        </a>
+      </div>
+
+      <div className="border-t border-[#c9a227]/25 pt-8">
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em]" style={{ color: secondary }}>
+            catalogue
+          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em]" style={{ color: goldText }}>
+            04 entries
+          </p>
+        </div>
+        <div>
+          {contacts.map((item) => (
+            <ContactRow key={item.label} {...item} isDark={isDark} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function FinaleUnlock({
+  titleRef,
+}: {
+  titleRef?: (el: HTMLElement | null) => void
+}) {
   const [isDark, setIsDark] = useState(true)
-  const [keyArrived, setKeyArrived] = useState(false)
-  const [bottomReached, setBottomReached] = useState(false)
-  const [unlocking, setUnlocking] = useState(false)
-  const [revealing, setRevealing] = useState(false)
-  const [backing, setBacking] = useState(false)
-  const [opened, setOpened] = useState(false)
 
   useEffect(() => {
     const update = () => setIsDark(document.documentElement.classList.contains('dark'))
@@ -32,203 +150,41 @@ export default function FinaleUnlock() {
     return () => observer.disconnect()
   }, [])
 
-  useEffect(() => {
-    if (!unlocking && !opened) return
-    const scrollY = window.scrollY || window.pageYOffset
-    const body = document.body
-    const prev = {
-      overflow: body.style.overflow,
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-    }
-    const prevent = (event: Event) => {
-      event.preventDefault()
-      event.stopPropagation()
-      if ('stopImmediatePropagation' in event) {
-        event.stopImmediatePropagation()
-      }
-    }
-
-    lenis?.stop()
-    body.style.overflow = 'hidden'
-    body.style.position = 'fixed'
-    body.style.top = `-${scrollY}px`
-    body.style.left = '0'
-    body.style.right = '0'
-    body.style.width = '100%'
-    window.addEventListener('wheel', prevent, { passive: false, capture: true })
-    window.addEventListener('touchmove', prevent, { passive: false, capture: true })
-
-    return () => {
-      window.removeEventListener('wheel', prevent, { capture: true })
-      window.removeEventListener('touchmove', prevent, { capture: true })
-      body.style.overflow = prev.overflow
-      body.style.position = prev.position
-      body.style.top = prev.top
-      body.style.left = prev.left
-      body.style.right = prev.right
-      body.style.width = prev.width
-      window.scrollTo(0, scrollY)
-      lenis?.start()
-    }
-  }, [unlocking, opened, lenis])
-
-  useEffect(() => {
-    return () => {
-      window.dispatchEvent(new CustomEvent(FINALE_SOBEL_OFF))
-    }
-  }, [])
-
-  const handleKeyArrived = useCallback(() => {
-    if (opened) return
-    setKeyArrived(true)
-  }, [opened])
-
-  useEffect(() => {
-    const updateBottomReached = () => {
-      const scrollY = window.scrollY || window.pageYOffset
-      const viewportH = window.innerHeight || 1
-      const pageH = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight,
-      )
-      setBottomReached(scrollY + viewportH >= pageH - 36)
-    }
-
-    updateBottomReached()
-    window.addEventListener('scroll', updateBottomReached, { passive: true })
-    window.addEventListener('resize', updateBottomReached)
-    return () => {
-      window.removeEventListener('scroll', updateBottomReached)
-      window.removeEventListener('resize', updateBottomReached)
-    }
-  }, [])
-
-  useEffect(() => {
-    const handleFlipbookComplete = () => {
-      setUnlocking(false)
-      setRevealing(false)
-      setOpened(true)
-    }
-    const handleKeyUnlockComplete = () => {
-      setRevealing(true)
-      window.dispatchEvent(new CustomEvent(FINALE_SOBEL_ON))
-    }
-    const handleKeyResetComplete = () => {
-      setOpened(false)
-      setUnlocking(false)
-      setRevealing(false)
-      setBacking(false)
-      setKeyArrived(true)
-      window.dispatchEvent(new CustomEvent(FINALE_SOBEL_OFF))
-    }
-
-    window.addEventListener(KEY_ARRIVED_EVENT, handleKeyArrived)
-    window.addEventListener(KEY_UNLOCK_COMPLETE_EVENT, handleKeyUnlockComplete)
-    window.addEventListener(KEY_RESET_COMPLETE_EVENT, handleKeyResetComplete)
-    window.addEventListener(FINALE_FLIPBOOK_COMPLETE, handleFlipbookComplete)
-    return () => {
-      window.removeEventListener(KEY_ARRIVED_EVENT, handleKeyArrived)
-      window.removeEventListener(KEY_UNLOCK_COMPLETE_EVENT, handleKeyUnlockComplete)
-      window.removeEventListener(KEY_RESET_COMPLETE_EVENT, handleKeyResetComplete)
-      window.removeEventListener(FINALE_FLIPBOOK_COMPLETE, handleFlipbookComplete)
-    }
-  }, [handleKeyArrived])
-
-  const beginUnlock = () => {
-    if (!keyArrived || !bottomReached || unlocking || opened) return
-    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    setUnlocking(true)
-    window.dispatchEvent(new CustomEvent(KEY_UNLOCK_EVENT))
-  }
-
-  const resetFinale = () => {
-    if (backing) return
-    setBacking(true)
-    window.dispatchEvent(new CustomEvent(KEY_RESET_EVENT))
-  }
-
-  const gold = isDark ? '#c9a227' : '#b08d57'
-  const surface = isDark ? '#251b11' : '#efe8d6'
-  const canUnlock = keyArrived && bottomReached
-  const buttonDisabled = !canUnlock || unlocking || opened
-  const buttonLabel = unlocking ? 'Unlocking' : canUnlock ? 'Unlock' : 'Locked'
-
   return (
-    <section ref={sectionRef} id="contact" className="relative z-10 flex min-h-screen w-full items-center justify-center py-24">
-      {!opened && (
+    <section id="contact" className="relative z-10 w-full overflow-hidden">
+      <div ref={titleRef} className="mb-12 pt-12 md:pt-20 md:pb-2 pl-[240px]">
+        <TitleHeading
+          title="contact"
+          subtitle="For product interfaces, portfolio systems, and WebGL-heavy frontends."
+          className="text-white"
+          titleClassName="text-2xl pt-[28vh]"
+          subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
+        />
+      </div>
+
+      <div className="relative w-full py-20 md:py-24">
         <div
-          data-key-guide-end
-          className={`relative mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-6 px-6 transition-all duration-700 ${
-            revealing ? 'opacity-0 scale-95 blur-sm pointer-events-none' : 'opacity-100 scale-100 blur-0'
-          }`}
-        >
-          <span
-            aria-hidden
-            className="block h-px w-24"
-            style={{ background: `linear-gradient(to right, transparent, ${gold}, transparent)` }}
-          />
+          className="absolute inset-0 ml-60 transition-colors duration-500"
+          style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-10 ml-60 transition-all duration-500"
+          style={{
+            backgroundImage: `url("${PAPER}")`,
+            backgroundRepeat: 'repeat',
+            backgroundPosition: 'top left',
+            backgroundSize: '600px',
+            mixBlendMode: isDark ? 'soft-light' : 'multiply',
+            filter: isDark ? 'invert(1) brightness(1.2) contrast(1.4)' : 'none',
+            opacity: isDark ? 0.75 : 0.34,
+          }}
+        />
 
-          <button
-            type="button"
-            data-key-unlock-button
-            disabled={buttonDisabled}
-            onClick={beginUnlock}
-            className="group relative inline-flex items-center gap-3 rounded-sm px-8 py-4 transition-all duration-500 enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45"
-            style={{
-              background: surface,
-              border: `1px solid ${isDark ? 'rgba(201,162,39,0.4)' : 'rgba(176,141,87,0.55)'}`,
-              boxShadow: isDark
-                ? 'inset 0 0 0 3px #251b11, inset 0 0 0 4px rgba(201,162,39,0.18)'
-                : 'inset 0 0 0 3px #efe8d6, inset 0 0 0 4px rgba(176,141,87,0.25)',
-              color: isDark ? '#e8c87a' : '#8c6b45',
-            }}
-          >
-            <svg className="h-4 w-4 transition-transform duration-500 group-enabled:group-hover:-translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-              <rect x="5" y="11" width="14" height="9" rx="1.5" />
-              <path strokeLinecap="round" d="M8 11V8a4 4 0 0 1 8 0v3" />
-            </svg>
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] md:text-sm">
-              {buttonLabel}
-            </span>
-          </button>
-
-          <span className="font-pinyon-script text-base md:text-lg" style={{ color: gold }}>
-            {canUnlock ? 'turn the key' : 'guide the key to the bottom'}
-          </span>
+        <div data-key-guide-end className="relative z-20 pl-[270px] pr-6">
+          <ContactPanel isDark={isDark} />
         </div>
-      )}
-
-      {opened && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-hidden px-4 py-8">
-          <div className="relative flex w-full max-w-4xl flex-col items-center gap-6 animate-[contactReveal_0.7s_cubic-bezier(0.22,1,0.36,1)_forwards]">
-            <button
-              type="button"
-              disabled={backing}
-              onClick={resetFinale}
-              className="self-start rounded-sm px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] transition-transform duration-300 enabled:hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-55"
-              style={{
-                border: `1px solid ${isDark ? 'rgba(201,162,39,0.45)' : 'rgba(176,141,87,0.55)'}`,
-                color: isDark ? '#e8c87a' : '#8c6b45',
-                background: isDark ? 'rgba(37,27,17,0.72)' : 'rgba(239,232,214,0.78)',
-              }}
-            >
-              {backing ? 'Returning' : 'Back'}
-            </button>
-            <ContactCatalogue play isDark={isDark} />
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        @keyframes contactReveal {
-          from { opacity: 0; transform: translateY(28px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      </div>
     </section>
   )
 }

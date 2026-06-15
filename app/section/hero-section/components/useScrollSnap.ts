@@ -53,6 +53,7 @@ export function useScrollSnap(): SnapState {
 
   const frameRef = useRef(0)
   const targetFrameRef = useRef(0)
+  const pendingScrollTargetRef = useRef<string | null>(null)
   const rafRef = useRef<number | null>(null)
   const lastTimeRef = useRef(0)
   const touchYRef = useRef(0)
@@ -99,6 +100,13 @@ export function useScrollSnap(): SnapState {
         if (!settled) {
           rafRef.current = requestAnimationFrame(tick)
         } else {
+          if (phase === 'project' && pendingScrollTargetRef.current) {
+            const target = pendingScrollTargetRef.current
+            pendingScrollTargetRef.current = null
+            requestAnimationFrame(() => {
+              document.getElementById(target)?.scrollIntoView({ behavior: 'smooth' })
+            })
+          }
           rafRef.current = null
           lastTimeRef.current = 0
         }
@@ -113,6 +121,27 @@ export function useScrollSnap(): SnapState {
 
     const scrub = (delta: number) => {
       targetFrameRef.current = clamp(targetFrameRef.current + delta, 0, LAST_FRAME)
+      startSmoothLoop()
+    }
+
+    const onStageNavigate = (event: Event) => {
+      const detail = (event as CustomEvent<{ label?: string; scrollTarget?: string }>).detail
+      const label = detail?.label
+      if (label !== 'home' && label !== 'about' && label !== 'project') return
+      pendingScrollTargetRef.current = detail?.scrollTarget ?? null
+
+      targetFrameRef.current = label === 'home'
+        ? 0
+        : label === 'about'
+          ? ABOUT_FRAME
+          : LAST_FRAME
+
+      window.scrollTo({ top: 0, behavior: label === 'project' ? 'auto' : 'smooth' })
+      if (label === 'project') {
+        lenisRef.current?.start()
+      } else {
+        lenisRef.current?.stop()
+      }
       startSmoothLoop()
     }
 
@@ -158,11 +187,13 @@ export function useScrollSnap(): SnapState {
     window.addEventListener('wheel', onWheel, { passive: false })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
     window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('portfolio:navigate-stage', onStageNavigate)
 
     return () => {
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
       window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('portfolio:navigate-stage', onStageNavigate)
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
       lenisRef.current?.start()
     }
