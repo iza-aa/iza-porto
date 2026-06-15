@@ -158,10 +158,10 @@ function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
 
   return (
     <div ref={containerRef} className="relative w-full overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] ml-60" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] " />
       <div
         ref={innerRef}
-        className="relative z-10 py-6 pr-6 lg:pl-[270px] md:py-6"
+        className="relative z-10 py-6 pr-6 pl-[240px] md:py-6"
         style={{
           opacity: 0,
           transform: 'translateY(60px)',
@@ -210,10 +210,10 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
   return (
     <div className="relative w-full overflow-hidden">
       <div
-        className="absolute inset-0 ml-60 transition-colors duration-500"
+        className="absolute inset-0 transition-colors duration-500"
         style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
       />
-      <div className="relative z-10 py-16 pr-6 lg:pl-[270px] md:py-16">
+      <div className="relative z-10 py-16 pr-6 pl-[240px] md:py-16">
         {/* FIX: Menghapus md:pr-24 agar sejajar dengan ExtraCanvas */}
         <div className={`grid grid-cols-1 gap-6 justify-start ${cols === 2 ? 'md:grid-cols-2' : 'md:grid-cols-[auto_auto_auto]'}`}>
           {data.map((project, idx) => {
@@ -295,7 +295,7 @@ export default function ProjectContent({
       <div className="relative z-10 w-full" style={{ marginTop: cinematicShell ? 0 : '-90vh' }}>
 
         {!skipIntro && (
-          <div className="pt-40 mb-12 lg:pl-[320px] md:pl-[280px] px-6 pointer-events-none">
+          <div className="pt-40 mb-12 pl-[240px] pointer-events-none">
             <TitleHeading
               title="project labs"
               subtitle="Standard 3-column architecture."
@@ -308,7 +308,7 @@ export default function ProjectContent({
 
         {!skipFirstBatch && (
           <div className="relative w-full">
-            <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
+            <div className="absolute inset-0 z-30 pointer-events-none transition-all duration-500"
               style={{
                 backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
                 backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',

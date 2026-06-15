@@ -23,7 +23,7 @@ import * as THREE from 'three'
  */
 
 const PAINTING_URL = '/asset/hero-section/patmos.jpg'
-const REVEAL_PAINTING_URL = '/asset/project-section/projectbg/hall.jpeg'
+const REVEAL_PAINTING_URL = '/asset/project-section/projectbg/lacrescenza.jpg'
 const IMG_ASPECT = 1920 / 1421
 const TEXT_TEXTURE_W = 2400
 

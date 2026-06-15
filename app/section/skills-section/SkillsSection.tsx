@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TitleHeading } from '../../components/TitleHeading'
 import LiquidGlass from '../../components/LiquidGlass'
-import SkillWebGLBackground from './SkillWebGLBackground'
 
 
 const LOCAL_EMOJIS = [
@@ -253,23 +252,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
   if (!isVisible) return null
 
   return (
-    <section className="relative w-full bg-[#1b1309]">
-      <SkillWebGLBackground />
-      {/* Opaque atmospheric backdrop so the fixed hero stage never shows
-          through — same leopard + grain language as the project section. */}
-      <div aria-hidden className="hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element -- decorative full-bleed backdrop */}
-        <img
-          src="/asset/project-section/projectbg/leopardbg.jpeg"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover opacity-24 mix-blend-luminosity"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#3f3320]/82 via-[#1b1309]/88 to-[#120a04]/94" />
-        <div
-          className="absolute inset-0 opacity-[0.08] mix-blend-overlay"
-          style={{ backgroundImage: 'url("/asset/noise.png")', backgroundRepeat: 'repeat' }}
-        />
-      </div>
+    <section className="relative w-full">
+      {/* Background is the shared WebGL backdrop in HeroSection — this section
+          stays transparent so it shows through. */}
       <div className="relative ">
       <style>{`
         @keyframes emoji-waterfall {
@@ -289,13 +274,13 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
       `}</style>
 
       {/* Title — outside/above the card, identical to the project sections */}
-      <div className="mb-12 px-6 pt-[6vh] md:pl-[280px] lg:pl-[320px]">
+      <div className="mb-12 pt-12 md:pt-20 md:pb-2 pl-[240px]">
         <TitleHeading
           title="skills"
           subtitle="The capabilities behind the craft."
-          className="text-white mb-10 pb-1"
-          titleClassName="text-4xl md:text-6xl"
-          subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+          className="text-white"
+          titleClassName="text-2xl pt-[42vh]"
+          subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
         />
       </div>
 
@@ -314,7 +299,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
             imageRendering: 'crisp-edges', transform: 'translateZ(0)',
           }}
         />
-        <div className="relative z-10 py-6 pr-6 lg:pl-[270px] md:py-6">
+        <div className="relative z-10 py-6 pr-6 pl-[270px] md:py-6">
           <SkillNetwork isDark={isDark} />
         </div>
       </div>
@@ -325,7 +310,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
           className="absolute inset-0 ml-60 transition-colors duration-500"
           style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
         />
-        <div className="relative z-10 py-16 pr-6 lg:pl-[270px] md:py-16">
+        <div className="relative z-10 py-16 pr-6 pl-[270px] md:py-16">
           <div className="grid grid-cols-1 gap-6 justify-start md:grid-cols-2">
             {SKILL_FEATURES.map((column, idx) => (
               <div key={idx} className="w-full max-w-full flex flex-col gap-10 pr-4">

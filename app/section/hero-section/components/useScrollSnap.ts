@@ -265,20 +265,21 @@ export function useScrollSnap(): SnapState {
       const phase = phaseRef.current
 
       if (phase === 'project') {
-        // Native scroll owns the page — except an upward gesture at the very
-        // top re-enters About.
+        // Native scroll owns the page from here on — project, skills and
+        // experience are one long scroll. Only an upward gesture at the very
+        // top re-enters About via the burn.
+        // NOTE: project→skills burn disabled (kept for possible future use).
         if (animatingRef.current) return
         if (e.deltaY < -TRIGGER_DELTA && window.scrollY <= 2) {
           e.preventDefault()
           reverseProjectToAbout()
-        } else if (e.deltaY > TRIGGER_DELTA && atProjectBottom()) {
-          e.preventDefault()
-          startProjectToSkills()
         }
         return
       }
 
-      if (phase === 'skills') {
+      // ── Disabled snap phases (skills/experience burns) — kept for reference ──
+      // eslint-disable-next-line no-constant-condition
+      if (false && phase === 'skills') {
         if (animatingRef.current) {
           e.preventDefault()
           return
@@ -293,7 +294,8 @@ export function useScrollSnap(): SnapState {
         return
       }
 
-      if (phase === 'experience') {
+      // eslint-disable-next-line no-constant-condition
+      if (false && phase === 'experience') {
         if (animatingRef.current) {
           e.preventDefault()
           return
@@ -331,18 +333,19 @@ export function useScrollSnap(): SnapState {
       const dy = touchStartY - y
 
       if (phase === 'project') {
+        // Native scroll owns the page (project + skills + experience are one
+        // long scroll). Only an upward swipe at the very top re-enters About.
         if (animatingRef.current) return
         if (dy < -TRIGGER_DELTA && window.scrollY <= 2) {
           e.preventDefault()
           reverseProjectToAbout()
-        } else if (dy > TRIGGER_DELTA && atProjectBottom()) {
-          e.preventDefault()
-          startProjectToSkills()
         }
         return
       }
 
-      if (phase === 'skills') {
+      // ── Disabled snap phases (skills/experience burns) — kept for reference ──
+      // eslint-disable-next-line no-constant-condition
+      if (false && phase === 'skills') {
         if (animatingRef.current) {
           e.preventDefault()
           return
@@ -357,7 +360,8 @@ export function useScrollSnap(): SnapState {
         return
       }
 
-      if (phase === 'experience') {
+      // eslint-disable-next-line no-constant-condition
+      if (false && phase === 'experience') {
         if (animatingRef.current) {
           e.preventDefault()
           return

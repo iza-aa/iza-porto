@@ -227,7 +227,11 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
           margin: 0,
           width: LIST_W,
           transformOrigin: 'top left',
-          pointerEvents: trigger ? 'auto' : 'none',
+          // The <ul> spans a tall/wide fixed strip but is mostly empty space
+          // (transparent leader dots). Keep IT click-through so it never eats
+          // clicks meant for content beneath (e.g. the finale button); only the
+          // actual <li> rows below opt back into pointer events.
+          pointerEvents: 'none',
         }}
         initial={{ opacity: 0 }}
         animate={{
@@ -260,6 +264,9 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
                 alignItems: 'baseline',
                 marginBottom: NAV_GAP,
                 cursor: trigger ? 'pointer' : 'default',
+                // Only the rows themselves are interactive (the <ul> is click-
+                // through); disabled until the intro reveal completes.
+                pointerEvents: trigger ? 'auto' : 'none',
               }}
               onClick={() => navigateTo(item.label)}
             >

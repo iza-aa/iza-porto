@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Source_Serif_4, Anton, Pinyon_Script, Archivo_Black } from "next/font/google";
+import { Source_Serif_4, Anton, Pinyon_Script, Archivo_Black, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./layout/navbar";
 import { LoadingProvider } from "./context/LoadingContext";
@@ -30,6 +30,13 @@ const archivoBlack = Archivo_Black({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-archivo-black",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ['700', '800', '900'],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -87,7 +94,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inknutAntiqua.variable} ${anton.variable} ${pinyonScript.variable} ${archivoBlack.variable} ${inknutAntiqua.className}`}>
+      <body className={`${inknutAntiqua.variable} ${anton.variable} ${pinyonScript.variable} ${archivoBlack.variable} ${inter.variable} ${inknutAntiqua.className}`}>
         {/* 2. Bungkus aplikasi dengan SmoothScrolling */}
         <SmoothScrolling>
           <LoadingProvider>

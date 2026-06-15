@@ -15,6 +15,7 @@ const config = {
         'anton': ['var(--font-anton)'],
         'pinyon-script': ['var(--font-pinyon-script)'],
         'inknut-antiqua': ['var(--font-inknut-antiqua)'],
+        'inter': ['var(--font-inter)'],
       },
       keyframes: {
         // Nama keyframe sesuai dengan yang digunakan di kelas animasi

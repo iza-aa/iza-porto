@@ -23,7 +23,7 @@ export default function AboutContent({ contentProgress = 1, showBackground = tru
   return (
     <section
       id="about"
-      className="relative min-h-[100dvh] w-full overflow-hidden px-5 py-24 md:py-28 md:pl-[280px] md:pr-12 lg:pl-[320px] lg:pr-20"
+      className="relative min-h-[100vh] w-full overflow-hidden px-5 py-24 md:py-28  md:pr-12 pl-[240px] lg:pr-20"
     >
       {/* Background package — skipped entirely when the WebGL canvas behind
           this section is the backdrop (showBackground=false), so the living
@@ -31,7 +31,7 @@ export default function AboutContent({ contentProgress = 1, showBackground = tru
       {showBackground && (
         <>
           <Image
-            src="/asset/project-section/projectbg/hall.jpeg"
+            src="/asset/project-section/projectbg/lacrescenza.jpg"
             alt=""
             fill
             sizes="100vw"

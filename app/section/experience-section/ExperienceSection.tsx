@@ -2,15 +2,9 @@
 
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { TitleHeading } from '../../components/TitleHeading'
 import { ProjectCard } from '../../components/ProjectMockups'
-import ContactSection from '../contact-section/ContactSection'
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
+import FinaleUnlock from './components/FinaleUnlock'
 
 function getColumnWidth(size: 'full' | 'half' | 'mac' | 'random' = 'full') {
   switch (size) {
@@ -77,7 +71,7 @@ function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
       <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] ml-60" />
       <div
         ref={innerRef}
-        className="relative z-10 py-6 pr-6 lg:pl-[270px] md:py-6"
+        className="relative z-10 py-6 pr-6 pl-[270px] md:py-6"
         style={{
           opacity: 0,
           transform: 'translateY(60px)',
@@ -124,7 +118,7 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
         className="absolute inset-0 ml-60 transition-colors duration-500"
         style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
       />
-      <div className="relative z-10 py-16 pr-6 lg:pl-[270px] md:py-16">
+      <div className="relative z-10 py-16 pr-6 pl-[270px] md:py-16">
         <div className={`grid grid-cols-1 gap-6 justify-start ${cols === 2 ? 'md:grid-cols-2' : 'md:grid-cols-[auto_auto_auto]'}`}>
           {data.map((project, idx) => {
             const mockupType = project.mockupType || 'full'
@@ -162,10 +156,7 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
 export default function ExperienceSection() {
   const [isDark, setIsDark] = useState(false)
   
-  // Ref untuk Animasi GSAP
   const wrapperRef = useRef<HTMLDivElement>(null)
-  const contactContainerRef = useRef<HTMLDivElement>(null)
-  const bentoCardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const update = () => setIsDark(document.documentElement.classList.contains('dark'))
@@ -175,73 +166,20 @@ export default function ExperienceSection() {
     return () => observer.disconnect()
   }, [])
 
-  // GSAP ScrollTrigger Logic
-  useEffect(() => {
-    if (!wrapperRef.current || !contactContainerRef.current || !bentoCardRef.current) return;
-
-    let ctx = gsap.context(() => {
-      // Sekali sampai dasar halaman, kartu turun sendiri dengan durasi tetap —
-      // tidak lagi mengikuti roda scroll (scrub) dan tanpa pin.
-      // toggleActions: onEnter=play, onLeaveBack=reverse (scroll naik = kartu
-      // kembali naik dengan animasi yang sama).
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: wrapperRef.current,
-          // "bottom 110%" = terpicu saat sisa scroll tinggal 10vh. Tanpa pin,
-          // titik di bawah "bottom bottom" tidak akan pernah tercapai — jangan
-          // pakai persentase < 100% di sini.
-          start: "bottom 110%",
-          end: "bottom 105%",
-          toggleActions: "play none none reverse",
-        },
-      });
-
-      // Animasi 1: Tarik dari atas (y: -100%) ke tengah (y: 0)
-      tl.to(contactContainerRef.current, {
-        y: 0,
-        duration: 1.5,
-        ease: "power3.inOut",
-      }, 0);
-
-      // Animasi 2: Scale up untuk efek gap
-      tl.to(bentoCardRef.current, {
-        scale: 1,
-        duration: 1.5,
-        ease: "power3.inOut",
-      }, 0);
-    });
-
-    return () => ctx.revert();
-  }, []);
-
   const bgColor = isDark ? '#0d110f' : '#e6e4d8'
 
   return (
-    // Tambahkan ref pada wrapper utama
+    // Background is the shared WebGL backdrop in HeroSection — this section is
+    // transparent so it shows through (no more bg1.jpeg / sticky / -100vh trick).
     <div ref={wrapperRef} className="relative w-full transition-colors duration-300">
-      
-      {/* FIXED BACKGROUND IMAGE */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden pointer-events-none z-0">
-        <Image 
-          src="/asset/experience-section/bg1.jpeg" 
-          alt="Experience Background" 
-          fill 
-          sizes="100vw"
-          quality={100}
-          priority
-          className="object-cover" 
-        />
-        <div/>
-      </div>
-
-      <div className="relative z-10 w-full" style={{ marginTop: '-100vh', paddingTop: '8rem' }}>
-        <div className="mb-12 lg:pl-[320px] md:pl-[280px] px-6">
+      <div className="relative z-10 w-full" >
+        <div className="mb-12 pt-12 md:pt-20 md:pb-2 pl-[240px]">
            <TitleHeading
               title="experience"
               subtitle="My professional journey and roles."
-              className="mb-20 pt-20 text-white"
-              titleClassName="text-4xl md:text-6xl"
-              subtitleClassName="text-base md:text-lg mt-0 opacity-70"
+              className="text-white"
+              titleClassName="text-2xl pt-[42vh]"
+              subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
             />
         </div>
 
@@ -259,27 +197,12 @@ export default function ExperienceSection() {
           <ExtraCanvas data={experienceData} cols={2} />
           <ConvinceLayer isDark={isDark} data={experienceData} features={experienceFeatures} cols={2} />
         </div>
-      </div>
 
-      {/* =========================================================
-          THE DROP ANIMATION CONTAINER
-          Trik overflow-hidden di sini menyembunyikan card sebelum ditarik
-          ========================================================= */}
-      <div className="absolute bottom-0 left-0 w-full h-screen overflow-hidden z-50 pointer-events-none">
-        <div
-          ref={contactContainerRef}
-          className="w-full h-full flex items-center justify-center -translate-y-[100%] pointer-events-none"
-        >
-          {/* BENTO CARD AWAL — hanya kartu yang turun, tanpa dinding di belakangnya */}
-          <div
-            ref={bentoCardRef}
-            className="pointer-events-auto w-[98vw] h-[96vh] bg-[#F5F0E6] dark:bg-[#1C1714] border border-[#b08d57]/40 dark:border-[#c9a227]/30 rounded-lg scale-[0.8] flex items-center justify-center shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55)]"
-          >
-            <ContactSection />
-          </div>
-        </div>
+        {/* ── THE FINALE — closing "wow": plaque button → gallery darkens →
+            (3D lock → signature → contact catalogue). Replaces the old bento
+            drop. In normal flow so it sits as the final full-stop of the page. ── */}
+        <FinaleUnlock />
       </div>
-
     </div>
   )
 }

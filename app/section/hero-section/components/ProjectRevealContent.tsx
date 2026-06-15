@@ -34,7 +34,7 @@ type ContentBatch = {
 // Two content cards, two projects each
 const contentCards: ContentBatch[] = [
   {
-    heading: 'extended labs',
+    heading: 'labs',
     subtitle: 'Dual-column showcase for detailed project exploration.',
     projects: [
       {
@@ -62,7 +62,7 @@ const contentCards: ContentBatch[] = [
     ],
   },
   {
-    heading: 'selected systems',
+    heading: 'second labs',
     subtitle: 'Second pass through deeper builds, reusable patterns, and production polish.',
     projects: [
       {
@@ -119,7 +119,7 @@ function ContentCard({
             imageRendering: 'crisp-edges', transform: 'translateZ(0)',
           }}
         />
-        <div className="relative z-10 py-6 pr-6 lg:pl-[270px] md:py-6">
+        <div className="relative z-10 py-6 pr-6 pl-[270px] md:py-6">
           <div className="grid grid-cols-1 gap-6 justify-start md:grid-cols-2">
             {projects.map((project, i) => (
               <ProjectCard
@@ -153,7 +153,7 @@ function ContentCard({
           className="absolute inset-0 ml-60 transition-colors duration-500"
           style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
         />
-        <div className="relative z-10 py-16 pr-6 lg:pl-[270px] md:py-16">
+        <div className="relative z-10 py-16 pr-6 pl-[270px] md:py-16">
           <div className="grid grid-cols-1 gap-6 justify-start md:grid-cols-2">
             {projects.map((_, idx) => {
               const columnFeatures = features[idx] || []
@@ -194,13 +194,13 @@ function RevealHeading({
   className?: string
 }) {
   return (
-    <div className={`mb-12 px-6 md:pl-[280px] lg:pl-[320px] ${className}`}>
+    <div className={`mb-12 pl-[240px] ${className}`}>
       <TitleHeading
         title={title}
         subtitle={subtitle}
-        className="text-white mb-10 pb-1"
-        titleClassName="text-4xl md:text-6xl"
-        subtitleClassName="text-base md:text-lg mt-0 text-white/70"
+        className="text-white"
+        titleClassName="text-2xl pt-[42vh]"
+        subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
       />
     </div>
   )
@@ -218,7 +218,14 @@ function useIsDark() {
   return isDark
 }
 
-export default function ProjectRevealContent() {
+export default function ProjectRevealContent({
+  titleRefs = [],
+}: {
+  // One sentinel-ref setter per heading, in order (extended labs, selected
+  // systems). Used by the scroll-driven WebGL backdrop to burn between paintings
+  // as each title rises into view.
+  titleRefs?: ((el: HTMLElement | null) => void)[]
+}) {
   const isDark = useIsDark()
 
   const openProjectSection = () => {
@@ -228,11 +235,14 @@ export default function ProjectRevealContent() {
   return (
     <div className="relative w-full">
       {contentCards.map((card, i) => (
-        <div key={i} className="relative">
+        <div key={i} className="relative" data-key-guide-start={i === 0 ? true : undefined}>
+          {/* sentinel sits exactly at the heading so the burn for this title
+              starts as the heading enters from the bottom of the viewport */}
+          <span ref={titleRefs[i]} aria-hidden className="absolute top-0 h-px w-px" />
           <RevealHeading
             title={card.heading}
             subtitle={card.subtitle}
-            className={i === 0 ? 'pt-[42vh] md:pt-[18vh] pb-2' : 'pt-12 md:pt-20 md:pb-2'}
+            className={i === 0 ? 'pt-1' : 'pt-12 md:pt-20 md:pb-2'}
           />
           <ContentCard
             projects={card.projects}
