@@ -33,6 +33,7 @@ const PAINTINGS: { url: string; aspect: number; technique: number }[] = [
   { url: '/asset/webgl-bg/fresco-3.jpg', aspect: 3038 / 3716, technique: TECH.VERTIGO },              // skills (radial Apollo)
   { url: '/asset/webgl-bg/fresco-4.jpg', aspect: 2996 / 3973, technique: TECH.BARREL },               // experience (framed open sky)
 ]
+const FINALE_ORDER = [3, 0, 1, 2, 3]
 
 const VERTEX = /* glsl */ `
   varying vec2 vUv;
@@ -58,6 +59,7 @@ const FRAGMENT = /* glsl */ `
   uniform vec2  uPointer;
   uniform float uPlaneAspect;
   uniform float uMix;            // 0 = fully A, 1 = fully B (scroll-driven)
+  uniform float uForceSobel;
   varying vec2 vUv;
 
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -132,9 +134,39 @@ const FRAGMENT = /* glsl */ `
     return color;
   }
 
+  vec3 sobelPainting(sampler2D map, float imgAspect, float tech, float z, vec2 baseUv){
+    vec2 texel = vec2(1.0 / 900.0, 1.0 / 900.0);
+
+    float tl = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2(-1.0,  1.0)), vec3(0.299, 0.587, 0.114));
+    float  t = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2( 0.0,  1.0)), vec3(0.299, 0.587, 0.114));
+    float tr = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2( 1.0,  1.0)), vec3(0.299, 0.587, 0.114));
+    float  l = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2(-1.0,  0.0)), vec3(0.299, 0.587, 0.114));
+    float  r = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2( 1.0,  0.0)), vec3(0.299, 0.587, 0.114));
+    float bl = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2(-1.0, -1.0)), vec3(0.299, 0.587, 0.114));
+    float  b = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2( 0.0, -1.0)), vec3(0.299, 0.587, 0.114));
+    float br = dot(samplePainting(map, imgAspect, tech, z, baseUv + texel * vec2( 1.0, -1.0)), vec3(0.299, 0.587, 0.114));
+
+    float gx = -tl - 2.0 * l - bl + tr + 2.0 * r + br;
+    float gy = -bl - 2.0 * b - br + tl + 2.0 * t + tr;
+    float edgeStrength = length(vec2(gx, gy));
+    edgeStrength = smoothstep(0.055, 0.38, edgeStrength);
+    edgeStrength = pow(edgeStrength, 0.72);
+
+    float grit = fbm(baseUv * 130.0 + vec2(uTime * 0.08, -uTime * 0.05));
+    float scratches = smoothstep(0.955, 1.0, noise(baseUv * vec2(260.0, 38.0) + uTime * 0.04));
+    vec3 paperBlack = vec3(0.012, 0.013, 0.014);
+    vec3 graphite = vec3(0.76, 0.80, 0.84) * (0.76 + grit * 0.34);
+    vec3 sobel = mix(paperBlack, graphite, edgeStrength);
+    sobel += vec3(0.12, 0.13, 0.14) * scratches * edgeStrength;
+    sobel += (grit - 0.5) * 0.035;
+    return max(sobel, paperBlack);
+  }
+
   void main() {
     vec3 colA = samplePainting(uMapA, uAspectA, uTechA, uZoomA, vUv);
     vec3 colB = samplePainting(uMapB, uAspectB, uTechB, uZoomB, vUv);
+    vec3 sobelA = sobelPainting(uMapA, uAspectA, uTechA, uZoomA, vUv);
+    vec3 sobelB = sobelPainting(uMapB, uAspectB, uTechB, uZoomB, vUv);
 
     // Burn dissolve: an fbm field gated by uMix decides per-pixel whether B has
     // taken over yet. A thin bright ember rides the front. Because uMix is the
@@ -145,7 +177,12 @@ const FRAGMENT = /* glsl */ `
     float edge = smoothstep(front - 0.10, front + 0.06, field);
     float toB = 1.0 - edge;
 
-    vec3 color = mix(colA, colB, toB);
+    // The new painting first appears as a dark graphite Sobel pass, then
+    // resolves into the full fresco as the burn completes.
+    float sobelHold = 1.0 - smoothstep(0.48, 0.92, uMix);
+    sobelHold *= smoothstep(0.04, 0.24, uMix);
+    vec3 revealB = mix(colB, sobelB, sobelHold);
+    vec3 color = mix(colA, revealB, toB);
 
     // white-hot ember on the burn front (only while transitioning)
     float ember = clamp(1.0 - abs(field - front) * 9.0, 0.0, 1.0);
@@ -155,6 +192,15 @@ const FRAGMENT = /* glsl */ `
     float vig = smoothstep(1.30, 0.48, length(vUv - 0.5) * 1.7);
     color *= mix(0.68, 1.0, vig);
 
+    vec3 forcedSobel = mix(sobelA, sobelB, uMix);
+    float forceField = fbm(vUv * vec2(5.0, 3.4) + vec2(0.19, -0.13));
+    float forceFront = uForceSobel * 1.28 - 0.14;
+    float forceMask = 1.0 - smoothstep(forceFront - 0.10, forceFront + 0.06, forceField);
+    float forceEmber = clamp(1.0 - abs(forceField - forceFront) * 9.0, 0.0, 1.0);
+    forceEmber *= step(0.001, uForceSobel) * step(uForceSobel, 0.999);
+    color = mix(color, forcedSobel, forceMask);
+    color += vec3(1.0) * forceEmber * 0.36;
+
     gl_FragColor = vec4(color, 1.0);
   }
 `
@@ -162,9 +208,13 @@ const FRAGMENT = /* glsl */ `
 function BackgroundPlane({
   progressRef,
   zoomDwellRef,
+  forceSobelRef,
+  forceSobelMixRef,
 }: {
   progressRef: React.MutableRefObject<number>
   zoomDwellRef: React.MutableRefObject<number[]>
+  forceSobelRef?: React.MutableRefObject<number>
+  forceSobelMixRef?: React.MutableRefObject<number>
 }) {
   const matRef = useRef<THREE.ShaderMaterial>(null)
   const textures = useLoader(THREE.TextureLoader, PAINTINGS.map((p) => p.url))
@@ -194,6 +244,7 @@ function BackgroundPlane({
       uPointer: { value: new THREE.Vector2(0, 0) },
       uPlaneAspect: { value: 16 / 9 },
       uMix: { value: 0 },
+      uForceSobel: { value: 0 },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [textures]
@@ -211,6 +262,7 @@ function BackgroundPlane({
   }, [])
 
   const maxIndex = PAINTINGS.length - 1
+  const finaleMaxIndex = FINALE_ORDER.length - 1
 
   useFrame((_, delta) => {
     const mat = matRef.current
@@ -220,27 +272,35 @@ function BackgroundPlane({
     mat.uniforms.uPlaneAspect.value = viewport.width / viewport.height
 
     // Scroll-driven: progress (float) → which pair + how far burned.
-    const p = Math.max(0, Math.min(maxIndex, progressRef.current))
-    const i = Math.min(maxIndex - 1, Math.floor(p))
+    const finaleProgress = forceSobelRef?.current ?? 0
+    const finaleMix = forceSobelMixRef?.current ?? 0
+    const sequenceMax = finaleProgress > 0 ? finaleMaxIndex : maxIndex
+    const p = finaleProgress > 0
+      ? Math.max(0, Math.min(sequenceMax, finaleProgress - 0.001))
+      : Math.max(0, Math.min(sequenceMax, progressRef.current))
+    const i = Math.min(sequenceMax - 1, Math.floor(p))
     const f = p - i
+    const indexA = finaleProgress > 0 ? FINALE_ORDER[i] : i
+    const indexB = finaleProgress > 0 ? FINALE_ORDER[i + 1] : i + 1
     // Only reassign textures when the integer pair changes (cheap, stable).
-    if (lastPair.current[0] !== i) {
-      mat.uniforms.uMapA.value = textures[i]
-      mat.uniforms.uAspectA.value = PAINTINGS[i].aspect
-      mat.uniforms.uTechA.value = PAINTINGS[i].technique
-      mat.uniforms.uMapB.value = textures[i + 1]
-      mat.uniforms.uAspectB.value = PAINTINGS[i + 1].aspect
-      mat.uniforms.uTechB.value = PAINTINGS[i + 1].technique
-      lastPair.current = [i, i + 1]
+    if (lastPair.current[0] !== indexA || lastPair.current[1] !== indexB) {
+      mat.uniforms.uMapA.value = textures[indexA]
+      mat.uniforms.uAspectA.value = PAINTINGS[indexA].aspect
+      mat.uniforms.uTechA.value = PAINTINGS[indexA].technique
+      mat.uniforms.uMapB.value = textures[indexB]
+      mat.uniforms.uAspectB.value = PAINTINGS[indexB].aspect
+      mat.uniforms.uTechB.value = PAINTINGS[indexB].technique
+      lastPair.current = [indexA, indexB]
     }
-    mat.uniforms.uMix.value = i >= maxIndex ? 0 : f
+    mat.uniforms.uMix.value = f
 
     // Per-painting zoom — each painting reads ITS OWN continuous dwell. A is
     // painting i, B is painting i+1, so they never get forced to a discrete
     // value mid-burn (which was making the outgoing painting suddenly shrink).
     const dwell = zoomDwellRef.current
-    mat.uniforms.uZoomA.value = dwell[i] ?? 0
-    mat.uniforms.uZoomB.value = dwell[i + 1] ?? 0
+    mat.uniforms.uZoomA.value = finaleProgress > 0 ? 1 : (dwell[indexA] ?? 0)
+    mat.uniforms.uZoomB.value = finaleProgress > 0 ? 1 : (dwell[indexB] ?? 0)
+    mat.uniforms.uForceSobel.value = finaleMix
   })
 
   return (
@@ -260,9 +320,13 @@ function BackgroundPlane({
 export default function ProjectWebGLBackground({
   progressRef,
   zoomDwellRef,
+  forceSobelRef,
+  forceSobelMixRef,
 }: {
   progressRef: React.MutableRefObject<number>
   zoomDwellRef: React.MutableRefObject<number[]>
+  forceSobelRef?: React.MutableRefObject<number>
+  forceSobelMixRef?: React.MutableRefObject<number>
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#120b05]">
@@ -274,7 +338,12 @@ export default function ProjectWebGLBackground({
         gl={{ antialias: false, powerPreference: 'high-performance' }}
       >
         <Suspense fallback={null}>
-          <BackgroundPlane progressRef={progressRef} zoomDwellRef={zoomDwellRef} />
+          <BackgroundPlane
+            progressRef={progressRef}
+            zoomDwellRef={zoomDwellRef}
+            forceSobelRef={forceSobelRef}
+            forceSobelMixRef={forceSobelMixRef}
+          />
         </Suspense>
       </Canvas>
 

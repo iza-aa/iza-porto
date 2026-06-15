@@ -40,13 +40,13 @@ const contentCards: ContentBatch[] = [
       {
         title: 'Dummy Project 4',
         desc: 'First dummy project for the half-width column layout.',
-        phoneBg: '/asset/project-section/projectbg/hall.jpeg',
+        phoneBg: '/asset/project-section/projectbg/newprojectbg/codioful-formerly-gradienta-2-GrvmAcF1g-unsplash.jpg',
         phoneImage: '/asset/project-section/projectbg/uii.png',
       },
       {
         title: 'Dummy Project 5',
         desc: 'Second dummy project for the half-width column layout.',
-        phoneBg: '/asset/project-section/projectbg/redcape.jpeg',
+        phoneBg: '/asset/project-section/projectbg/newprojectbg/codioful-formerly-gradienta-CgpPJObA9Q0-unsplash.jpg',
         phoneImage: '/asset/project-section/projectbg/izapos.png',
       },
     ],
@@ -68,13 +68,13 @@ const contentCards: ContentBatch[] = [
       {
         title: 'Dummy Project 6',
         desc: 'Third dummy project extending the dual-column showcase.',
-        phoneBg: '/asset/project-section/projectbg/whiteyellow.jpeg',
+        phoneBg: '/asset/project-section/projectbg/newprojectbg/codioful-formerly-gradienta-KZ5EIdidXSk-unsplash.jpg',
         phoneImage: '/asset/project-section/projectbg/izapos.png',
       },
       {
         title: 'Dummy Project 7',
         desc: 'Fourth dummy project completing the second content card.',
-        phoneBg: '/asset/project-section/projectbg/hall.jpeg',
+        phoneBg: '/asset/project-section/projectbg/newprojectbg/iklas-f8j9du8HWdQ-unsplash.jpg',
         phoneImage: '/asset/project-section/projectbg/uii.png',
       },
     ],

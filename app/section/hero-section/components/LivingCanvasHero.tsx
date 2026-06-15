@@ -84,6 +84,34 @@ const FRAGMENT = /* glsl */ `
     return v;
   }
 
+  vec3 sobelTexture(sampler2D map, vec2 uv) {
+    vec2 texel = vec2(1.0 / 900.0, 1.0 / 900.0);
+
+    float tl = dot(texture2D(map, uv + texel * vec2(-1.0,  1.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float  t = dot(texture2D(map, uv + texel * vec2( 0.0,  1.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float tr = dot(texture2D(map, uv + texel * vec2( 1.0,  1.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float  l = dot(texture2D(map, uv + texel * vec2(-1.0,  0.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float  r = dot(texture2D(map, uv + texel * vec2( 1.0,  0.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float bl = dot(texture2D(map, uv + texel * vec2(-1.0, -1.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float  b = dot(texture2D(map, uv + texel * vec2( 0.0, -1.0)).rgb, vec3(0.299, 0.587, 0.114));
+    float br = dot(texture2D(map, uv + texel * vec2( 1.0, -1.0)).rgb, vec3(0.299, 0.587, 0.114));
+
+    float gx = -tl - 2.0 * l - bl + tr + 2.0 * r + br;
+    float gy = -bl - 2.0 * b - br + tl + 2.0 * t + tr;
+    float edgeStrength = length(vec2(gx, gy));
+    edgeStrength = smoothstep(0.055, 0.38, edgeStrength);
+    edgeStrength = pow(edgeStrength, 0.72);
+
+    float grit = fbm(uv * 130.0 + vec2(uTime * 0.08, -uTime * 0.05));
+    float scratches = smoothstep(0.955, 1.0, noise(uv * vec2(260.0, 38.0) + uTime * 0.04));
+    vec3 paperBlack = vec3(0.012, 0.013, 0.014);
+    vec3 graphite = vec3(0.76, 0.80, 0.84) * (0.76 + grit * 0.34);
+    vec3 sobel = mix(paperBlack, graphite, edgeStrength);
+    sobel += vec3(0.12, 0.13, 0.14) * scratches * edgeStrength;
+    sobel += (grit - 0.5) * 0.035;
+    return max(sobel, paperBlack);
+  }
+
   void main() {
     // Slow Ken Burns breathe + scroll push-in. Base zoom 1.07 keeps the
     // parallax offsets from ever exposing the texture edge.
@@ -107,6 +135,8 @@ const FRAGMENT = /* glsl */ `
     vec2 sampleUv = uv + parallax;
     vec3 heroColor = texture2D(uMap, sampleUv).rgb;
     vec3 revealColor = texture2D(uRevealMap, sampleUv).rgb;
+    vec3 revealSobel = sobelTexture(uRevealMap, sampleUv);
+    vec3 projectSobel = sobelTexture(uRevealMap, sampleUv);
     vec4 aboutContent = texture2D(uAboutMap, vUv);
 
     // The burn rises from the SOFTWARE ENGINEER title area and eats upward
@@ -120,6 +150,9 @@ const FRAGMENT = /* glsl */ `
 
     vec3 ember = FLAME_CORE * edge;
     vec3 gold = FLAME_HALO * edge * 0.5;
+    float sobelHold = 1.0 - smoothstep(0.50, 0.90, uBurn);
+    sobelHold *= smoothstep(0.04, 0.22, uBurn);
+    revealColor = mix(revealColor, revealSobel, sobelHold);
     vec3 color = mix(heroColor, revealColor, ash);
 
     vec4 textSample = texture2D(uTextMap, vUv);
@@ -158,6 +191,10 @@ const FRAGMENT = /* glsl */ `
       smoothstep(projectThreshold + 0.03, projectThreshold + 0.105, projectField);
     projectAsh *= smoothstep(0.02, 0.12, uProjectBurn);
     projectEdge *= smoothstep(0.02, 0.12, uProjectBurn);
+
+    float projectSobelHold = 1.0 - smoothstep(0.48, 0.90, uProjectBurn);
+    projectSobelHold *= smoothstep(0.04, 0.22, uProjectBurn);
+    color = mix(color, projectSobel, projectAsh * projectSobelHold);
 
     color += FLAME_CORE * projectEdge;
     color += FLAME_HALO * projectEdge * 0.5;
@@ -291,23 +328,6 @@ function drawSoftwareEngineerTexture(canvas: HTMLCanvasElement, aspect: number) 
   ctx.restore()
 }
 
-function drawCoverImage(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number
-) {
-  const iw = img.naturalWidth || img.width
-  const ih = img.naturalHeight || img.height
-  if (!iw || !ih) return
-  const scale = Math.max(w / iw, h / ih)
-  const sw = w / scale
-  const sh = h / scale
-  ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h)
-}
-
 function wrapCanvasText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -342,7 +362,6 @@ function wrapCanvasText(
 function drawAboutTexture(
   canvas: HTMLCanvasElement,
   aspect: number,
-  portrait?: HTMLImageElement | null,
   signature?: HTMLImageElement | null
 ) {
   const width = TEXT_TEXTURE_W
@@ -361,25 +380,15 @@ function drawAboutTexture(
     typeof window !== 'undefined'
       ? getComputedStyle(document.body).getPropertyValue('--font-anton').trim()
       : ''
-  const fontInknut =
-    typeof window !== 'undefined'
-      ? getComputedStyle(document.body).getPropertyValue('--font-inknut-antiqua').trim()
-      : ''
   const display = fontAnton || 'Anton, Impact, sans-serif'
-  const label = fontInknut || 'serif'
   const serif = 'Georgia, Times New Roman, serif'
 
   const leftPad = width * (aspect < 0.9 ? 0.08 : 0.195)
   const rightPad = width * (aspect < 0.9 ? 0.08 : 0.07)
-  const top = height * 0.22
+  const top = height * 0.2
   const navReserve = aspect < 0.9 ? 0 : width * 0.12
   const usableX = Math.max(leftPad, navReserve + width * 0.035)
-  const columnGap = width * 0.055
-  const leftW = aspect < 0.9 ? width - leftPad - rightPad : width * 0.42
-  const photoX = aspect < 0.9 ? leftPad : usableX + leftW + columnGap
-  const photoW = aspect < 0.9 ? width - leftPad - rightPad : width - photoX - rightPad
-  const photoH = aspect < 0.9 ? height * 0.46 : height * 0.62
-  const photoY = aspect < 0.9 ? height * 0.42 : height * 0.19
+  const contentW = aspect < 0.9 ? width - leftPad - rightPad : width - usableX - rightPad
 
   ctx.save()
   ctx.globalAlpha = 0.9
@@ -389,25 +398,21 @@ function drawAboutTexture(
 
   ctx.save()
   ctx.translate(usableX, top)
-  ctx.fillStyle = 'rgba(201,162,39,0.72)'
-  ctx.font = `600 ${Math.max(14, width * 0.006)}px ${label}`
-  ctx.fillText('NO. II / PROFILE', 0, 0)
-
   ctx.fillStyle = 'rgba(243,238,229,0.98)'
-  ctx.font = `400 ${Math.max(64, width * (aspect < 0.9 ? 0.064 : 0.058))}px ${display}, Impact, sans-serif`
+  ctx.font = `400 ${Math.max(64, width * (aspect < 0.9 ? 0.064 : 0.062))}px ${display}, Impact, sans-serif`
   ctx.textBaseline = 'top'
   const heading = aspect < 0.9
-    ? ['BUILDER OF', 'PRACTICAL', 'INTERFACES']
-    : ['BUILDER OF', 'PRACTICAL', 'INTERFACES']
-  const lineHeight = Math.max(70, width * (aspect < 0.9 ? 0.062 : 0.056))
+    ? ['Builder of', 'Practical', 'Interfaces']
+    : ['Builder of', 'Practical', 'Interfaces']
+  const lineHeight = Math.max(70, width * (aspect < 0.9 ? 0.062 : 0.06))
   heading.forEach((line, index) => {
-    ctx.fillText(line, 0, width * 0.022 + lineHeight * index)
+    ctx.fillText(line, 0, lineHeight * index)
   })
-  const headingBottom = width * 0.022 + lineHeight * heading.length
+  const headingBottom = lineHeight * heading.length
   const signatureY = headingBottom + height * 0.035
   if (signature?.complete) {
     // Left-aligned: draw the signature flush to x=0 (not centered in its box)
-    const sigBoxW = leftW * 0.62
+    const sigBoxW = contentW * 0.38
     const sigBoxH = height * 0.09
     const sw = signature.naturalWidth || signature.width
     const sh = signature.naturalHeight || signature.height
@@ -429,58 +434,10 @@ function drawAboutTexture(
     'I design and build practical digital systems with a focus on clarity, structure, and reliable execution. My work sits between interface craft and real operational needs.',
     0,
     signatureY + height * 0.11,
-    leftW * 0.88,
+    Math.min(contentW * 0.66, width * 0.56),
     width * 0.015,
     5
   )
-  ctx.restore()
-
-  ctx.save()
-  ctx.fillStyle = 'rgba(18,13,9,0.58)'
-  ctx.strokeStyle = 'rgba(201,162,39,0.38)'
-  ctx.lineWidth = 1.3
-  ctx.shadowColor = 'rgba(0,0,0,0.45)'
-  ctx.shadowBlur = width * 0.035
-  ctx.fillRect(photoX, photoY, photoW, photoH)
-  ctx.shadowBlur = 0
-  ctx.strokeRect(photoX, photoY, photoW, photoH)
-
-  const corner = width * 0.012
-  const cornerPad = width * 0.008
-  ctx.strokeStyle = 'rgba(201,162,39,0.72)'
-  ;[
-    [photoX + cornerPad, photoY + cornerPad, 1, 1],
-    [photoX + photoW - cornerPad, photoY + cornerPad, -1, 1],
-    [photoX + cornerPad, photoY + photoH - cornerPad, 1, -1],
-    [photoX + photoW - cornerPad, photoY + photoH - cornerPad, -1, -1],
-  ].forEach(([cx, cy, sx, sy]) => {
-    ctx.beginPath()
-    ctx.moveTo(cx, cy + sy * corner)
-    ctx.lineTo(cx, cy)
-    ctx.lineTo(cx + sx * corner, cy)
-    ctx.stroke()
-  })
-
-  const inner = width * 0.018
-  const imageX = photoX + inner
-  const imageY = photoY + inner
-  const imageW = photoW - inner * 2
-  const imageH = photoH - inner * 2
-  ctx.fillStyle = 'rgba(23,16,11,0.86)'
-  ctx.fillRect(imageX, imageY, imageW, imageH)
-  ctx.strokeStyle = 'rgba(201,162,39,0.7)'
-  ctx.strokeRect(imageX + 8, imageY + 8, imageW - 16, imageH - 16)
-  if (portrait?.complete) {
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(imageX + 18, imageY + 18, imageW - 36, imageH - 36)
-    ctx.clip()
-    drawCoverImage(ctx, portrait, imageX + 18, imageY + 18, imageW - 36, imageH - 36)
-    ctx.restore()
-    ctx.fillStyle = 'rgba(70,42,12,0.18)'
-    ctx.fillRect(imageX + 18, imageY + 18, imageW - 36, imageH - 36)
-  }
-
   ctx.restore()
 }
 
@@ -502,7 +459,6 @@ function PaintingPlane({
   const pointerTarget = useRef(new THREE.Vector2(0, 0))
   const textCanvas = useMemo(() => document.createElement('canvas'), [])
   const aboutCanvas = useMemo(() => document.createElement('canvas'), [])
-  const portraitRef = useRef<HTMLImageElement | null>(null)
   const signatureRef = useRef<HTMLImageElement | null>(null)
   const textTexture = useMemo(() => {
     const tex = new THREE.CanvasTexture(textCanvas)
@@ -563,17 +519,13 @@ function PaintingPlane({
   useEffect(() => {
     const redraw = () => {
       const aspect = window.innerWidth / Math.max(1, window.innerHeight)
-      drawAboutTexture(aboutCanvas, aspect, portraitRef.current, signatureRef.current)
+      drawAboutTexture(aboutCanvas, aspect, signatureRef.current)
       aboutTexture.needsUpdate = true
     }
 
-    const portrait = new window.Image()
     const signature = new window.Image()
-    portraitRef.current = portrait
     signatureRef.current = signature
-    portrait.src = '/asset/about-section/Fotosaya.jpg'
     signature.src = '/asset/about-section/namasaya.png'
-    portrait.onload = redraw
     signature.onload = redraw
 
     redraw()

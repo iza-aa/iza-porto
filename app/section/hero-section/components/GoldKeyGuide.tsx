@@ -6,7 +6,12 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import * as THREE from 'three'
 
 const KEY_MODEL_URL = '/asset/3dobj/keys.obj'
-const UNLOCK_EVENT = 'portfolio:gold-key-unlock'
+const KEY_ARRIVED_EVENT = 'portfolio:gold-key-arrived'
+const KEY_UNLOCK_EVENT = 'portfolio:gold-key-unlock'
+const KEY_UNLOCK_COMPLETE_EVENT = 'portfolio:gold-key-unlock-complete'
+const KEY_RESET_EVENT = 'portfolio:gold-key-reset'
+const KEY_RESET_COMPLETE_EVENT = 'portfolio:gold-key-reset-complete'
+const KEY_ACTION_DURATION_MS = 2450
 
 type ScrollState = {
   progress: number
@@ -42,6 +47,20 @@ function closestAngleTarget(current: number, target: number) {
   return target + Math.round((current - target) / fullTurn) * fullTurn
 }
 
+function screenToWorld(
+  x: number,
+  y: number,
+  targetZ: number,
+  camera: THREE.Camera,
+  size: { width: number; height: number },
+) {
+  const ndc = new THREE.Vector3((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1, 0.5)
+  ndc.unproject(camera)
+  const direction = ndc.sub(camera.position).normalize()
+  const distance = (targetZ - camera.position.z) / direction.z
+  return camera.position.clone().add(direction.multiplyScalar(distance))
+}
+
 function getKeyPoint(progress: number): KeyPoint {
   const t = progress
   const loop = Math.PI * 2 * 3.25
@@ -71,7 +90,6 @@ function getPathLean(progress: number) {
 
 function useKeyScrollProgress() {
   const [state, setState] = useState<ScrollState>({ progress: 0, active: false })
-  const hasUnlockedRef = useRef(false)
 
   useEffect(() => {
     let frame = 0
@@ -88,15 +106,19 @@ function useKeyScrollProgress() {
       const endY = end.getBoundingClientRect().top + scrollY - viewportH * 0.62
       const progress = clamp01((scrollY - startY) / Math.max(1, endY - startY))
       const active = scrollY >= startY - viewportH * 0.12 && scrollY <= endY + viewportH * 0.2
+      const pageH = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+      )
+      const bottomReached = scrollY + viewportH >= pageH - 36
 
       setState((prev) => {
         if (Math.abs(prev.progress - progress) < 0.002 && prev.active === active) return prev
         return { progress, active }
       })
 
-      if (progress > 0.985 && active && !hasUnlockedRef.current) {
-        hasUnlockedRef.current = true
-        window.dispatchEvent(new CustomEvent(UNLOCK_EVENT))
+      if (progress > 0.985 && active && bottomReached) {
+        window.dispatchEvent(new CustomEvent(KEY_ARRIVED_EVENT))
       }
     }
 
@@ -154,9 +176,11 @@ function makeGlowTexture() {
 function GoldKeyModel({
   progress,
   pointerRef,
+  actionSignal,
 }: {
   progress: number
   pointerRef: MutableRefObject<PointerState>
+  actionSignal: number
 }) {
   const loaded = useLoader(OBJLoader, KEY_MODEL_URL)
   const key = useMemo(() => {
@@ -193,8 +217,12 @@ function GoldKeyModel({
   const smoothProgress = useRef(progress)
   const hoverAmount = useRef(0)
   const hoverTwist = useRef(0)
+  const actionSignalRef = useRef(actionSignal)
+  const actionStarted = useRef(false)
+  const actionTimeRef = useRef(999)
   const projected = useMemo(() => new THREE.Vector3(), [])
   const hoverAnchor = useMemo(() => new THREE.Vector3(0, 0, 0), [])
+  const unlockTarget = useMemo(() => new THREE.Vector3(), [])
 
   useFrame(({ camera, size }, delta) => {
     const g = group.current
@@ -206,15 +234,41 @@ function GoldKeyModel({
     const t = smoothProgress.current
     const point = getKeyPoint(t)
 
-    g.position.set(point.x, point.y, point.z)
+    if (actionSignalRef.current !== actionSignal) {
+      actionSignalRef.current = actionSignal
+      actionStarted.current = true
+      actionTimeRef.current = 0
+    }
+    actionTimeRef.current += delta
+    const actionT = actionStarted.current ? clamp01(actionTimeRef.current / (KEY_ACTION_DURATION_MS / 1000)) : 0
+    const approachT = actionStarted.current ? smoothstep(0, 0.28, actionT) : 0
+    const retreatT = actionStarted.current ? smoothstep(0.62, 1, actionT) : 0
+    const moveT = approachT * (1 - retreatT)
+    const turnT = actionStarted.current ? smoothstep(0.25, 0.62, actionT) * (1 - retreatT) : 0
+    const unlockPunch = Math.sin(turnT * Math.PI)
+    const unlockSettle = turnT
+    const button = document.querySelector<HTMLElement>('[data-key-unlock-button]')
+    if (button) {
+      const rect = button.getBoundingClientRect()
+      unlockTarget.copy(screenToWorld(rect.left + rect.width * 0.5, rect.top + rect.height * 0.42, 0.72, camera, size))
+      unlockTarget.y += 0.04
+    } else {
+      unlockTarget.set(point.x, point.y + 0.34, point.z + 0.72)
+    }
+    g.position.set(
+      THREE.MathUtils.lerp(point.x, unlockTarget.x, moveT),
+      THREE.MathUtils.lerp(point.y, unlockTarget.y, moveT),
+      THREE.MathUtils.lerp(point.z, unlockTarget.z, moveT) + unlockPunch * 0.18,
+    )
     g.rotation.set(0, 0, 0)
-    g.scale.setScalar(THREE.MathUtils.lerp(0.34, 0.4, point.settle) * (1 + hoverAmount.current * 0.08))
-    o.rotation.x = -0.03
-    o.rotation.y = 0.1
+    g.scale.setScalar(THREE.MathUtils.lerp(0.34, 0.4, point.settle) * (1 + hoverAmount.current * 0.08 + unlockPunch * 0.12))
     const pathLean = getPathLean(t) * point.spiralFade
-    o.rotation.z = -0.06 - pathLean + Math.sin(t * point.loop) * 0.08 * point.spiralFade
+    const travelZ = -0.06 - pathLean + Math.sin(t * point.loop) * 0.08 * point.spiralFade
+    o.rotation.x = THREE.MathUtils.lerp(-0.03, -1.34, moveT)
+    o.rotation.y = THREE.MathUtils.lerp(0.1, 0.0, moveT)
+    o.rotation.z = THREE.MathUtils.lerp(travelZ, 0.02, moveT)
     s.rotation.x = 0
-    s.rotation.y = hoverTwist.current
+    s.rotation.y = hoverTwist.current + unlockSettle * Math.PI * 2.35
     s.rotation.z = 0
     g.updateMatrixWorld()
 
@@ -242,7 +296,7 @@ function GoldKeyModel({
     if (light.current) {
       light.current.position.copy(g.position)
       light.current.position.z += 1.4
-      light.current.intensity = THREE.MathUtils.lerp(6.2, 9.2, point.settle) + hoverAmount.current * 3.4
+      light.current.intensity = THREE.MathUtils.lerp(6.2, 9.2, point.settle) + hoverAmount.current * 3.4 + unlockPunch * 5.2
     }
 
     const haloPulse = 1 + hoverAmount.current * 0.14
@@ -306,36 +360,14 @@ function GoldKeyModel({
   )
 }
 
-function FinaleRing({ progress }: { progress: number }) {
-  const ring = useRef<THREE.Group>(null)
-  const opacity = smoothstep(0.88, 0.98, progress)
-
-  useFrame(({ clock }) => {
-    if (!ring.current) return
-    ring.current.rotation.z = clock.elapsedTime * 0.7
-    ring.current.scale.setScalar(THREE.MathUtils.lerp(0.7, 1.1, opacity))
-  })
-
-  return (
-    <group ref={ring} position={[0, -1.35, -0.22]}>
-      <mesh>
-        <torusGeometry args={[0.48, 0.012, 12, 80]} />
-        <meshBasicMaterial color="#f2cf77" transparent opacity={opacity * 0.72} />
-      </mesh>
-      <mesh rotation={[0, 0, Math.PI / 4]}>
-        <torusGeometry args={[0.66, 0.006, 12, 80]} />
-        <meshBasicMaterial color="#fff0b8" transparent opacity={opacity * 0.38} />
-      </mesh>
-    </group>
-  )
-}
-
 function Scene({
   progress,
   pointerRef,
+  actionSignal,
 }: {
   progress: number
   pointerRef: MutableRefObject<PointerState>
+  actionSignal: number
 }) {
   return (
     <>
@@ -343,8 +375,7 @@ function Scene({
       <directionalLight position={[2, 5, 5]} intensity={4.8} color="#fff0cc" />
       <directionalLight position={[-4, -2, 3]} intensity={1.4} color="#8fb5ff" />
       <Suspense fallback={null}>
-        <GoldKeyModel progress={progress} pointerRef={pointerRef} />
-        <FinaleRing progress={progress} />
+        <GoldKeyModel progress={progress} pointerRef={pointerRef} actionSignal={actionSignal} />
       </Suspense>
     </>
   )
@@ -352,10 +383,23 @@ function Scene({
 
 export default function GoldKeyGuide({ enabled = true }: { enabled?: boolean }) {
   const { progress, active } = useKeyScrollProgress()
+  const [actionSignal, setActionSignal] = useState(0)
   const pointerRef = useRef<PointerState>({ x: -9999, y: -9999, active: false })
-  const opacity = enabled && active ? smoothstep(0, 0.08, progress) * (1 - smoothstep(0.985, 1, progress)) : 0
+  const opacity = enabled && active ? smoothstep(0, 0.08, progress) : 0
 
   useEffect(() => {
+    const onUnlock = () => {
+      setActionSignal((signal) => signal + 1)
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent(KEY_UNLOCK_COMPLETE_EVENT))
+      }, KEY_ACTION_DURATION_MS)
+    }
+    const onReset = () => {
+      setActionSignal((signal) => signal + 1)
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent(KEY_RESET_COMPLETE_EVENT))
+      }, KEY_ACTION_DURATION_MS)
+    }
     const onPointerMove = (event: PointerEvent) => {
       pointerRef.current = { x: event.clientX, y: event.clientY, active: true }
     }
@@ -363,9 +407,13 @@ export default function GoldKeyGuide({ enabled = true }: { enabled?: boolean }) 
       pointerRef.current = { x: -9999, y: -9999, active: false }
     }
 
+    window.addEventListener(KEY_UNLOCK_EVENT, onUnlock)
+    window.addEventListener(KEY_RESET_EVENT, onReset)
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     window.addEventListener('pointerleave', onPointerLeave)
     return () => {
+      window.removeEventListener(KEY_UNLOCK_EVENT, onUnlock)
+      window.removeEventListener(KEY_RESET_EVENT, onReset)
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerleave', onPointerLeave)
     }
@@ -382,7 +430,7 @@ export default function GoldKeyGuide({ enabled = true }: { enabled?: boolean }) 
         camera={{ fov: 36, position: [0, 0, 5.4] }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        <Scene progress={progress} pointerRef={pointerRef} />
+        <Scene progress={progress} pointerRef={pointerRef} actionSignal={actionSignal} />
       </Canvas>
     </div>
   )

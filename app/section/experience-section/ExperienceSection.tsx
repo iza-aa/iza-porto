@@ -24,7 +24,7 @@ const experienceData = [
   {
     title: 'Senior Frontend Developer',
     desc: 'Led a team of developers to build robust web applications. Implemented new architecture, improving performance by 40%.',
-    phoneBg: '/asset/experience-section/flower2.jpeg',
+    phoneBg: '/asset/project-section/projectbg/newprojectbg/iklas-fjTNGAq2tVY-unsplash.jpg',
     mockupType: 'random' as const,
     overrideW: 'max-w-full w-full', 
     overrideH: 'aspect-[16/13]'
@@ -32,7 +32,7 @@ const experienceData = [
   {
     title: 'Full Stack Engineer',
     desc: 'Developed scalable microservices and integrated payment gateways. Mentored junior engineers and conducted code reviews.',
-    phoneBg: '/asset/experience-section/flower.jpeg',
+    phoneBg: '/asset/project-section/projectbg/newprojectbg/ziming-zhang-0XWOWsRdlb8-unsplash.jpg',
     mockupType: 'random' as const,
     overrideW: 'max-w-full w-full', 
     overrideH: 'aspect-[16/13]'
@@ -165,8 +165,6 @@ export default function ExperienceSection() {
     observer.observe(document.documentElement, { attributeFilter: ['class'] })
     return () => observer.disconnect()
   }, [])
-
-  const bgColor = isDark ? '#0d110f' : '#e6e4d8'
 
   return (
     // Background is the shared WebGL backdrop in HeroSection — this section is

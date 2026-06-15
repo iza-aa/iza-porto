@@ -24,9 +24,10 @@ interface Props {
   frameIndex: number
   trigger: boolean
   totalFrames: number
+  disabled?: boolean
 }
 
-export default function NavOverlay({ frameIndex, trigger }: Props) {
+export default function NavOverlay({ frameIndex, trigger, disabled = false }: Props) {
   // getActive lives in a mount-once effect — read the live frame via ref
   const frameIndexRef = useRef(frameIndex)
   frameIndexRef.current = frameIndex
@@ -121,6 +122,7 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
   }, [frameIndex, hasFlown])
 
   const navigateTo = (label: string) => {
+    if (disabled) return
     navLockRef.current = true
     clearTimeout((navigateTo as unknown as { _t?: ReturnType<typeof setTimeout> })._t)
       ; (navigateTo as unknown as { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => {
@@ -232,6 +234,7 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
           // clicks meant for content beneath (e.g. the finale button); only the
           // actual <li> rows below opt back into pointer events.
           pointerEvents: 'none',
+          opacity: disabled ? 0.38 : undefined,
         }}
         initial={{ opacity: 0 }}
         animate={{
@@ -263,10 +266,10 @@ export default function NavOverlay({ frameIndex, trigger }: Props) {
                 display: 'flex',
                 alignItems: 'baseline',
                 marginBottom: NAV_GAP,
-                cursor: trigger ? 'pointer' : 'default',
+                cursor: trigger && !disabled ? 'pointer' : 'default',
                 // Only the rows themselves are interactive (the <ul> is click-
                 // through); disabled until the intro reveal completes.
-                pointerEvents: trigger ? 'auto' : 'none',
+                pointerEvents: trigger && !disabled ? 'auto' : 'none',
               }}
               onClick={() => navigateTo(item.label)}
             >
