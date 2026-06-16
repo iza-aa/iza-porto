@@ -139,19 +139,35 @@ const FRAGMENT = /* glsl */ `
     vec3 projectSobel = sobelTexture(uRevealMap, sampleUv);
     vec4 aboutContent = texture2D(uAboutMap, vUv);
 
+    float portrait = 1.0 - step(0.9, uPlaneAspect);
+    float burnRise = 0.72;
+    float desktopBurnNoise = fbm(vUv * vec2(5.0, 3.4) + vec2(uTime * 0.035, -uTime * 0.018)) * 0.34;
+    float cloudA = fbm(vec2(vUv.x * 1.45 + uTime * 0.012, 0.21));
+    float cloudB = fbm(vec2(vUv.x * 2.80 - uTime * 0.010 + 2.7, 0.58));
+    float cloudC = fbm(vec2(vUv.x * 4.20 + 6.0, 0.82 - uTime * 0.007));
+    float cloudBand = smoothstep(0.18, 0.88, cloudA * 0.58 + cloudB * 0.30 + cloudC * 0.12);
+    float portraitRibbon =
+      cloudBand * 0.18 +
+      fbm(vec2(vUv.x * 1.05 + 4.0, 0.36 + uTime * 0.006)) * 0.035;
+    float burnNoise = mix(desktopBurnNoise, portraitRibbon, portrait);
+    float burnEdgePower = mix(1.0, 0.58, portrait);
+
     // The burn rises from the SOFTWARE ENGINEER title area and eats upward
     // through a noisy painterly edge, like old varnish catching fire.
-    float burnField = (1.0 - vUv.y) * 0.72 + fbm(vUv * vec2(5.0, 3.4) + vec2(uTime * 0.035, -uTime * 0.018)) * 0.34;
+    float burnField = (1.0 - vUv.y) * burnRise + burnNoise;
     float threshold = 1.12 - uBurn * 1.32;
-    float ash = smoothstep(threshold - 0.10, threshold + 0.08, burnField);
-    float edge = smoothstep(threshold - 0.018, threshold + 0.028, burnField) - smoothstep(threshold + 0.03, threshold + 0.105, burnField);
+    float ash = smoothstep(threshold - mix(0.10, 0.125, portrait), threshold + mix(0.08, 0.105, portrait), burnField);
+    float edge =
+      smoothstep(threshold - mix(0.018, 0.034, portrait), threshold + mix(0.028, 0.058, portrait), burnField) -
+      smoothstep(threshold + mix(0.030, 0.072, portrait), threshold + mix(0.105, 0.175, portrait), burnField);
     ash *= smoothstep(0.02, 0.12, uBurn);
-    edge *= smoothstep(0.02, 0.12, uBurn);
+    edge *= smoothstep(0.02, 0.12, uBurn) * burnEdgePower;
 
     vec3 ember = FLAME_CORE * edge;
     vec3 gold = FLAME_HALO * edge * 0.5;
     float sobelHold = 1.0 - smoothstep(0.50, 0.90, uBurn);
     sobelHold *= smoothstep(0.04, 0.22, uBurn);
+    sobelHold *= mix(1.0, 0.86, portrait);
     revealColor = mix(revealColor, revealSobel, sobelHold);
     vec3 color = mix(heroColor, revealColor, ash);
 
@@ -163,8 +179,8 @@ const FRAGMENT = /* glsl */ `
     color += textSample.rgb * textAlpha * 0.18;
 
     float textEdge = textSample.a * edge;
-    color += FLAME_CORE * textEdge * 1.15;
-    color += FLAME_HALO * textEdge * 0.55;
+    color += mix(FLAME_CORE, vec3(0.92, 0.95, 0.96), portrait) * textEdge * mix(1.15, 0.56, portrait);
+    color += FLAME_HALO * textEdge * mix(0.55, 0.28, portrait);
 
     color += ember + gold;
 
@@ -181,23 +197,22 @@ const FRAGMENT = /* glsl */ `
     // Phase C: burn the About foreground itself away. The transparent holes
     // reveal the real Project DOM already sitting behind this sticky WebGL
     // stage, which makes the transition read as About becoming Project.
-    float projectField =
-      (1.0 - vUv.y) * 0.72 +
-      fbm(vUv * vec2(5.0, 3.4) + vec2(uTime * 0.035, -uTime * 0.018)) * 0.34;
+    float projectField = (1.0 - vUv.y) * burnRise + burnNoise;
     float projectThreshold = 1.12 - uProjectBurn * 1.32;
-    float projectAsh = smoothstep(projectThreshold - 0.10, projectThreshold + 0.08, projectField);
+    float projectAsh = smoothstep(projectThreshold - mix(0.10, 0.125, portrait), projectThreshold + mix(0.08, 0.105, portrait), projectField);
     float projectEdge =
-      smoothstep(projectThreshold - 0.018, projectThreshold + 0.028, projectField) -
-      smoothstep(projectThreshold + 0.03, projectThreshold + 0.105, projectField);
+      smoothstep(projectThreshold - mix(0.018, 0.034, portrait), projectThreshold + mix(0.028, 0.058, portrait), projectField) -
+      smoothstep(projectThreshold + mix(0.030, 0.072, portrait), projectThreshold + mix(0.105, 0.175, portrait), projectField);
     projectAsh *= smoothstep(0.02, 0.12, uProjectBurn);
-    projectEdge *= smoothstep(0.02, 0.12, uProjectBurn);
+    projectEdge *= smoothstep(0.02, 0.12, uProjectBurn) * burnEdgePower;
 
     float projectSobelHold = 1.0 - smoothstep(0.48, 0.90, uProjectBurn);
     projectSobelHold *= smoothstep(0.04, 0.22, uProjectBurn);
+    projectSobelHold *= mix(1.0, 0.86, portrait);
     color = mix(color, projectSobel, projectAsh * projectSobelHold);
 
-    color += FLAME_CORE * projectEdge;
-    color += FLAME_HALO * projectEdge * 0.5;
+    color += mix(FLAME_CORE, vec3(0.92, 0.95, 0.96), portrait) * projectEdge * mix(1.0, 0.56, portrait);
+    color += FLAME_HALO * projectEdge * mix(0.5, 0.32, portrait);
     float projectSmoke = projectEdge * fbm(vUv * 18.0 + uTime * 0.08);
     color = mix(color, vec3(0.13, 0.10, 0.08), projectSmoke * 0.22);
 
@@ -283,6 +298,9 @@ function drawSoftwareEngineerTexture(canvas: HTMLCanvasElement, aspect: number) 
   if (!ctx) return
 
   ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  if (aspect < 1) return
+
   ctx.save()
   ctx.scale(dpr, dpr)
 
@@ -385,7 +403,8 @@ function drawAboutTexture(
 
   const leftPad = width * (aspect < 0.9 ? 0.08 : 0.195)
   const rightPad = width * (aspect < 0.9 ? 0.08 : 0.07)
-  const top = height * 0.2
+  const isMobile = aspect < 0.9
+  const top = height * (isMobile ? 0.16 : 0.2)
   const navReserve = aspect < 0.9 ? 0 : width * 0.12
   const usableX = Math.max(leftPad, navReserve + width * 0.035)
   const contentW = aspect < 0.9 ? width - leftPad - rightPad : width - usableX - rightPad
@@ -407,7 +426,7 @@ function drawAboutTexture(
     ctx.fillText(line, 0, lineHeight * index)
   })
   const headingBottom = lineHeight * heading.length
-  const signatureY = headingBottom + height * 0.035
+  const signatureY = headingBottom + height * (isMobile ? 0.018 : 0.035)
   if (signature?.complete) {
     // Left-aligned: draw the signature flush to x=0 (not centered in its box)
     const sigBoxW = contentW * 0.38
@@ -425,15 +444,19 @@ function drawAboutTexture(
   }
 
   ctx.fillStyle = 'rgba(242,234,220,0.82)'
-  ctx.font = `${Math.max(19, width * 0.0105)}px ${serif}`
+  const bodyFontSize = isMobile ? width * 0.038 : Math.max(19, width * 0.0105)
+  const bodyLineHeight = isMobile ? width * 0.052 : width * 0.015
+  const bodyMaxWidth = isMobile ? Math.min(contentW * 0.9, width * 0.78) : Math.min(contentW * 0.66, width * 0.56)
+
+  ctx.font = `${bodyFontSize}px ${serif}`
   ctx.textBaseline = 'top'
   wrapCanvasText(
     ctx,
     'I design and build practical digital systems with a focus on clarity, structure, and reliable execution. My work sits between interface craft and real operational needs.',
     0,
-    signatureY + height * 0.11,
-    Math.min(contentW * 0.66, width * 0.56),
-    width * 0.015,
+    signatureY + height * (isMobile ? 0.065 : 0.11),
+    bodyMaxWidth,
+    bodyLineHeight,
     5
   )
   ctx.restore()
@@ -534,6 +557,7 @@ function PaintingPlane({
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
+      if (window.matchMedia('(pointer: coarse)').matches) return
       pointerTarget.current.set(
         (e.clientX / window.innerWidth) * 2 - 1,
         (e.clientY / window.innerHeight) * 2 - 1

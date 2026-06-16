@@ -68,10 +68,10 @@ function ExtraCanvas({ data, cols = 3 }: { data: any[], cols?: number }) {
 
   return (
     <div ref={containerRef} className="relative w-full overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] ml-60" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] lg:ml-60" />
       <div
         ref={innerRef}
-        className="relative z-10 py-6 pr-6 pl-[270px] md:py-6"
+        className="relative z-10 px-4 py-5 sm:px-6 md:py-6 lg:pl-[270px] lg:pr-6"
         style={{
           opacity: 0,
           transform: 'translateY(60px)',
@@ -115,10 +115,10 @@ function ConvinceLayer({ isDark, data, features, cols = 3 }: { isDark: boolean; 
   return (
     <div className="relative w-full overflow-hidden">
       <div
-        className="absolute inset-0 ml-60 transition-colors duration-500"
+        className="absolute inset-0 transition-colors duration-500 lg:ml-60"
         style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
       />
-      <div className="relative z-10 py-16 pr-6 pl-[270px] md:py-16">
+      <div className="relative z-10 px-4 py-12 sm:px-6 md:py-16 lg:pl-[270px] lg:pr-6">
         <div className={`grid grid-cols-1 gap-6 justify-start ${cols === 2 ? 'md:grid-cols-2' : 'md:grid-cols-[auto_auto_auto]'}`}>
           {data.map((project, idx) => {
             const mockupType = project.mockupType || 'full'
@@ -175,18 +175,18 @@ export default function ExperienceSection({
     // stays transparent and lets the living canvas show through.
     <div ref={wrapperRef} className="relative w-full transition-colors duration-300">
       <div className="relative z-10 w-full" >
-        <div className="mb-12 pt-12 md:pt-20 md:pb-2 pl-[240px]">
+        <div className="mb-10 px-4 pt-12 sm:px-6 md:pt-20 md:pb-2 lg:mb-12 lg:pl-[240px] lg:pr-0">
            <TitleHeading
               title="experience"
               subtitle="My professional journey and roles."
               className="text-white"
-              titleClassName="text-2xl pt-[42vh]"
-              subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
+              titleClassName="text-[clamp(3.25rem,16vw,12.5rem)] pt-[32vh] lg:pt-[42vh]"
+              subtitleClassName="mt-0 text-white/70"
             />
         </div>
 
         <div className="relative w-full">
-          <div className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
+          <div className="absolute inset-0 z-30 pointer-events-none transition-all duration-500 lg:ml-60"
             style={{
               backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
               backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px', 

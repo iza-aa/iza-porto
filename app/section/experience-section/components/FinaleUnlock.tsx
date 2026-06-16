@@ -110,7 +110,7 @@ function ContactPanel({ isDark }: { isDark: boolean }) {
 
         <a
           href={`mailto:${EMAIL}`}
-          className="inline-flex min-w-[240px] self-end justify-center border border-[#b08d57]/60 px-5 py-2 text-center text-[10px] uppercase tracking-[0.22em] text-[#d4c4a8] transition-colors duration-300 hover:border-[#b08d57] hover:bg-[#b08d57]/10 md:min-w-[280px] md:text-xs"
+          className="inline-flex min-w-[240px] self-end justify-center border border-[#8c6b45]/60 px-5 py-2 text-center text-[10px] uppercase tracking-[0.22em] text-[#5c4738] transition-colors duration-300 hover:border-[#8c6b45] hover:bg-[#8c6b45]/10 dark:border-[#b08d57]/60 dark:text-[#d4c4a8] dark:hover:border-[#b08d57] dark:hover:bg-[#b08d57]/10 md:min-w-[280px] md:text-xs"
         >
           Start with email ↗
         </a>
@@ -152,24 +152,24 @@ export default function FinaleUnlock({
 
   return (
     <section id="contact" className="relative z-10 w-full overflow-hidden">
-      <div ref={titleRef} className="mb-12 pt-12 md:pt-20 md:pb-2 pl-[240px]">
+      <div ref={titleRef} className="mb-10 px-4 pt-12 sm:px-6 md:pt-20 md:pb-2 lg:mb-12 lg:pl-[240px] lg:pr-0">
         <TitleHeading
           title="contact"
           subtitle="For product interfaces, portfolio systems, and WebGL-heavy frontends."
           className="text-white"
-          titleClassName="text-2xl pt-[28vh]"
-          subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
+          titleClassName="text-[clamp(3.25rem,16vw,12.5rem)] pt-[24vh] lg:pt-[28vh]"
+          subtitleClassName="mt-0 text-white/70"
         />
       </div>
 
       <div className="relative w-full py-20 md:py-24">
         <div
-          className="absolute inset-0 ml-60 transition-colors duration-500"
+          className="absolute inset-0 transition-colors duration-500 lg:ml-60"
           style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-10 ml-60 transition-all duration-500"
+          className="pointer-events-none absolute inset-0 z-10 transition-all duration-500 lg:ml-60"
           style={{
             backgroundImage: `url("${PAPER}")`,
             backgroundRepeat: 'repeat',
@@ -181,7 +181,7 @@ export default function FinaleUnlock({
           }}
         />
 
-        <div data-key-guide-end className="relative z-20 pl-[270px] pr-6">
+        <div data-key-guide-end className="relative z-20 px-4 sm:px-6 lg:pl-[270px] lg:pr-6">
           <ContactPanel isDark={isDark} />
         </div>
       </div>

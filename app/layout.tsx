@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Source_Serif_4, Anton, Pinyon_Script, Archivo_Black, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./layout/navbar";
@@ -79,6 +79,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -87,6 +93,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/* Prevent flash of wrong theme on load */}
         <script
           dangerouslySetInnerHTML={{

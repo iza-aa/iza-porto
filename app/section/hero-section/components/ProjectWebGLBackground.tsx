@@ -173,9 +173,16 @@ const FRAGMENT = /* glsl */ `
     // taken over yet. A thin bright ember rides the front. Because uMix is the
     // scroll fraction and A/B are always (current, next), this is a pure
     // function of scroll — no stateful hand-off, so it never flips back.
-    float field = fbm(vUv * vec2(5.0, 3.4));
+    float portrait = 1.0 - step(0.9, uPlaneAspect);
+    float desktopField = fbm(vUv * vec2(5.0, 3.4));
+    float cloudA = fbm(vec2(vUv.x * 1.45 + uTime * 0.012, 0.21));
+    float cloudB = fbm(vec2(vUv.x * 2.80 - uTime * 0.010 + 2.7, 0.58));
+    float cloudC = fbm(vec2(vUv.x * 4.20 + 6.0, 0.82 - uTime * 0.007));
+    float cloudBand = smoothstep(0.18, 0.88, cloudA * 0.58 + cloudB * 0.30 + cloudC * 0.12);
+    float portraitField = (1.0 - vUv.y) * 0.72 + cloudBand * 0.20;
+    float field = mix(desktopField, portraitField, portrait);
     float front = uMix * 1.28 - 0.14;
-    float edge = smoothstep(front - 0.10, front + 0.06, field);
+    float edge = smoothstep(front - mix(0.10, 0.13, portrait), front + mix(0.06, 0.10, portrait), field);
     float toB = 1.0 - edge;
 
     // The new painting first appears as a dark graphite Sobel pass, then
@@ -186,21 +193,23 @@ const FRAGMENT = /* glsl */ `
     vec3 color = mix(colA, revealB, toB);
 
     // white-hot ember on the burn front (only while transitioning)
-    float ember = clamp(1.0 - abs(field - front) * 9.0, 0.0, 1.0);
+    float ember = clamp(1.0 - abs(field - front) * mix(9.0, 6.2, portrait), 0.0, 1.0);
     ember *= step(0.001, uMix) * step(uMix, 0.999);
-    color += vec3(1.0, 1.0, 1.0) * ember * 0.5;
+    color += mix(vec3(1.0), vec3(0.92, 0.95, 0.96), portrait) * ember * mix(0.5, 0.38, portrait);
 
     float vig = smoothstep(1.30, 0.48, length(vUv - 0.5) * 1.7);
     color *= mix(0.68, 1.0, vig);
 
     vec3 forcedSobel = mix(sobelA, sobelB, uMix);
-    float forceField = fbm(vUv * vec2(5.0, 3.4) + vec2(0.19, -0.13));
+    float desktopForceField = fbm(vUv * vec2(5.0, 3.4) + vec2(0.19, -0.13));
+    float portraitForceField = (1.0 - vUv.y) * 0.72 + cloudBand * 0.20;
+    float forceField = mix(desktopForceField, portraitForceField, portrait);
     float forceFront = uForceSobel * 1.28 - 0.14;
-    float forceMask = 1.0 - smoothstep(forceFront - 0.10, forceFront + 0.06, forceField);
-    float forceEmber = clamp(1.0 - abs(forceField - forceFront) * 9.0, 0.0, 1.0);
+    float forceMask = 1.0 - smoothstep(forceFront - mix(0.10, 0.13, portrait), forceFront + mix(0.06, 0.10, portrait), forceField);
+    float forceEmber = clamp(1.0 - abs(forceField - forceFront) * mix(9.0, 6.2, portrait), 0.0, 1.0);
     forceEmber *= step(0.001, uForceSobel) * step(uForceSobel, 0.999);
     color = mix(color, forcedSobel, forceMask);
-    color += vec3(1.0) * forceEmber * 0.36;
+    color += mix(vec3(1.0), vec3(0.92, 0.95, 0.96), portrait) * forceEmber * mix(0.36, 0.28, portrait);
 
     gl_FragColor = vec4(color, 1.0);
   }

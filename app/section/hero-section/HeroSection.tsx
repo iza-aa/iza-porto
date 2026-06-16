@@ -30,6 +30,7 @@ export default function HeroSection() {
   const [revealContent, setRevealContent] = useState(false)
   const [showLoading, setShowLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
+  const [heroViewportMode, setHeroViewportMode] = useState<'mobile' | 'desktop'>('desktop')
   const { setAppLoading } = useAppLoading()
   const startTimeRef = useRef(Date.now())
 
@@ -41,6 +42,19 @@ export default function HeroSection() {
     const observer = new MutationObserver(update)
     observer.observe(document.documentElement, { attributeFilter: ['class'] })
     return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const update = () => {
+      setHeroViewportMode(window.matchMedia('(max-width: 1023px)').matches ? 'mobile' : 'desktop')
+    }
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
+    }
   }, [])
 
   useEffect(() => {
@@ -140,6 +154,7 @@ export default function HeroSection() {
         style={{ visibility: phase === 'project' || phase === 'skills' ? 'hidden' : 'visible' }}
       >
         <LivingCanvasHero
+          key={heroViewportMode}
           frameIndex={frameIndex}
           totalFrames={TOTAL_FRAMES}
           burnProgress={burnProgress}

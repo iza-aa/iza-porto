@@ -31,8 +31,8 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
   // getActive lives in a mount-once effect — read the live frame via ref
   const frameIndexRef = useRef(frameIndex)
   frameIndexRef.current = frameIndex
-  const [vw, setVw] = useState(1440)
-  const [vh, setVh] = useState(900)
+  const [vw, setVw] = useState(() => (typeof window === 'undefined' ? 1440 : window.innerWidth))
+  const [vh, setVh] = useState(() => (typeof window === 'undefined' ? 900 : window.innerHeight))
   const [hasFlown, setHasFlown] = useState(false)
   const [flyDone, setFlyDone] = useState(false)
   const [time, setTime] = useState('')
@@ -192,9 +192,113 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
   // Nav text is always white, in both light and dark mode.
   const NAV_WHITE = 'rgba(255,255,255,0.88)'
   const navInteractive = trigger && !disabled
+  const mobileBrandFlown = frameIndex > FLIGHT_TRIGGER
 
   return (
     <>
+      <div className="lg:hidden">
+        <motion.div
+          className="pointer-events-none fixed z-[200]"
+          style={{
+            width: '68vw',
+            maxWidth: 340,
+          }}
+          initial={false}
+          animate={{
+            left: mobileBrandFlown ? 20 : '16vw',
+            top: mobileBrandFlown ? 22 : '37dvh',
+            opacity: trigger ? 1 : 0,
+          }}
+          transition={{
+            left: spring,
+            top: spring,
+            opacity: fadeTransition,
+          }}
+        >
+          <motion.span
+            initial={false}
+            animate={{ fontSize: mobileBrandFlown ? 13 : 18 }}
+            transition={spring}
+            style={{
+              fontFamily: 'var(--font-anton)',
+              display: 'block',
+              color: NAV_WHITE,
+              whiteSpace: 'nowrap',
+              lineHeight: 1,
+              userSelect: 'none',
+              marginBottom: 18,
+            }}
+          >
+            iza creation labs
+          </motion.span>
+
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              opacity: mobileBrandFlown ? 0 : 1,
+              transform: mobileBrandFlown ? 'translateY(-72px) scale(0.94)' : 'translateY(0) scale(1)',
+              transition: 'opacity 0.32s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)',
+              transformOrigin: 'top center',
+            }}
+          >
+            {NAV_ITEMS.map((item) => (
+              <li
+                key={item.label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 8,
+                  marginBottom: 7,
+                  color: activeSection === item.label ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.72)',
+                  userSelect: 'none',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-inknut-antiqua)',
+                    fontSize: 12,
+                    fontWeight: activeSection === item.label ? 700 : 500,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.label}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.28em',
+                    fontSize: 8,
+                    color: activeSection === item.label ? 'rgba(255,255,255,0.78)' : 'transparent',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {LEADER_DOTS}
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-inknut-antiqua)',
+                    fontSize: 9,
+                    fontWeight: activeSection === item.label ? 700 : 500,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  {item.roman}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      </div>
+
+      <div className="hidden lg:block">
       {/* ── Title — ONE element, springs from idle → final ─────────────────── */}
       <motion.div
         className="pointer-events-none"
@@ -383,6 +487,7 @@ export default function NavOverlay({ frameIndex, trigger, disabled = false }: Pr
           </div>
         )
       })()}
+      </div>
     </>
   )
 }

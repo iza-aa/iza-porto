@@ -22,6 +22,7 @@
 
 html {
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 /* Antique gold text selection */
@@ -34,6 +35,8 @@ body {
   background: var(--background);
   transition: background 0.35s ease, color 0.35s ease;
   overscroll-behavior: none;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 @keyframes fadeUpIn {

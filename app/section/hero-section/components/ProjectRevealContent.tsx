@@ -106,10 +106,10 @@ function ContentCard({
     <div className="relative w-full">
       {/* ── ExtraCanvas equivalent: two mockup cards ── */}
       <div className="relative w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] ml-60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] lg:ml-60" />
         <div
           aria-hidden
-          className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
+          className="absolute inset-0 z-30 pointer-events-none transition-all duration-500 lg:ml-60"
           style={{
             backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
             backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
@@ -119,7 +119,7 @@ function ContentCard({
             imageRendering: 'crisp-edges', transform: 'translateZ(0)',
           }}
         />
-        <div className="relative z-10 py-6 pr-6 pl-[270px] md:py-6">
+        <div className="relative z-10 px-4 py-5 sm:px-6 md:py-6 lg:pl-[270px] lg:pr-6">
           <div className="grid grid-cols-1 gap-6 justify-start md:grid-cols-2">
             {projects.map((project, i) => (
               <ProjectCard
@@ -150,10 +150,10 @@ function ContentCard({
       {/* ── ConvinceLayer equivalent: two feature pairs ── */}
       <div className="relative w-full overflow-hidden">
         <div
-          className="absolute inset-0 ml-60 transition-colors duration-500"
+          className="absolute inset-0 transition-colors duration-500 lg:ml-60"
           style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
         />
-        <div className="relative z-10 py-16 pr-6 pl-[270px] md:py-16">
+        <div className="relative z-10 px-4 py-12 sm:px-6 md:py-16 lg:pl-[270px] lg:pr-6">
           <div className="grid grid-cols-1 gap-6 justify-start md:grid-cols-2">
             {projects.map((_, idx) => {
               const columnFeatures = features[idx] || []
@@ -194,13 +194,13 @@ function RevealHeading({
   className?: string
 }) {
   return (
-    <div className={`mb-12 pl-[240px] ${className}`}>
+    <div className={`mb-10 px-4 sm:px-6 lg:mb-12 lg:pl-[240px] lg:pr-0 ${className}`}>
       <TitleHeading
         title={title}
         subtitle={subtitle}
         className="text-white"
-        titleClassName="text-2xl pt-[42vh]"
-        subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
+        titleClassName="text-[clamp(3.25rem,16vw,12.5rem)] pt-[32vh] lg:pt-[42vh]"
+        subtitleClassName="mt-0 text-white/70"
       />
     </div>
   )

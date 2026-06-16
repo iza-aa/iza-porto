@@ -274,22 +274,22 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
       `}</style>
 
       {/* Title — outside/above the card, identical to the project sections */}
-      <div className="mb-12 pt-12 md:pt-20 md:pb-2 pl-[240px]">
+      <div className="mb-10 px-4 pt-12 sm:px-6 md:pt-20 md:pb-2 lg:mb-12 lg:pl-[240px] lg:pr-0">
         <TitleHeading
           title="skills"
           subtitle="The capabilities behind the craft."
           className="text-white"
-          titleClassName="text-2xl pt-[42vh]"
-          subtitleClassName="text-xl md:text-2xl mt-0 text-white/70"
+          titleClassName="text-[clamp(3.25rem,16vw,12.5rem)] pt-[32vh] lg:pt-[42vh]"
+          subtitleClassName="mt-0 text-white/70"
         />
       </div>
 
       {/* ── ExtraCanvas equivalent: solid card holding the node network ── */}
       <div className="relative w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] ml-60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#e9ede6] to-[#dce2d8] dark:from-[#121814] dark:to-[#080c0a] lg:ml-60" />
         <div
           aria-hidden
-          className="absolute inset-0 z-30 pointer-events-none ml-60 transition-all duration-500"
+          className="absolute inset-0 z-30 pointer-events-none transition-all duration-500 lg:ml-60"
           style={{
             backgroundImage: 'url("/asset/project-section/projectbg/paper.jpg")',
             backgroundRepeat: 'repeat', backgroundPosition: 'top left', backgroundSize: '600px',
@@ -299,7 +299,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
             imageRendering: 'crisp-edges', transform: 'translateZ(0)',
           }}
         />
-        <div className="relative z-10 py-6 pr-6 pl-[270px] md:py-6">
+        <div className="relative z-10 px-4 py-5 sm:px-6 md:py-6 lg:pl-[270px] lg:pr-6">
           <SkillNetwork isDark={isDark} />
         </div>
       </div>
@@ -307,10 +307,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ isVisible = true }
       {/* ── ConvinceLayer equivalent: description pairs below the card ── */}
       <div className="relative w-full overflow-hidden">
         <div
-          className="absolute inset-0 ml-60 transition-colors duration-500"
+          className="absolute inset-0 transition-colors duration-500 lg:ml-60"
           style={{ backgroundColor: isDark ? '#0d110f' : '#e6e4d8' }}
         />
-        <div className="relative z-10 py-16 pr-6 pl-[270px] md:py-16">
+        <div className="relative z-10 px-4 py-12 sm:px-6 md:py-16 lg:pl-[270px] lg:pr-6">
           <div className="grid grid-cols-1 gap-6 justify-start md:grid-cols-2">
             {SKILL_FEATURES.map((column, idx) => (
               <div key={idx} className="w-full max-w-full flex flex-col gap-10 pr-4">
